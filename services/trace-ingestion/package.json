@@ -1,0 +1,17 @@
+{
+  "name": "navo-trace-ingestion",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@runto/protocol": "workspace:*",
+    "@runto/telemetry": "workspace:*"
+  }
+}

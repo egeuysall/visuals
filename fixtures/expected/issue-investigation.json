@@ -1,0 +1,4 @@
+{
+  "outputContains": ["ENG-142", "stale", "cursor"],
+  "qualityRule": "The optimized run must retain the same success criteria as control."
+}

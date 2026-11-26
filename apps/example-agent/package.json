@@ -1,0 +1,20 @@
+{
+  "name": "navo-example-agent",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean",
+    "start": "node --env-file-if-exists=../../.env dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@runto/cache": "workspace:*",
+    "@runto/core": "workspace:*",
+    "@runto/mcp": "workspace:*",
+    "@runto/provider-vercel": "workspace:*",
+    "@runto/telemetry": "workspace:*"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "navo-example-benchmark",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=../../.env ../../node_modules/tsx/dist/cli.mjs index.ts",
+    "general": "node --env-file-if-exists=../../.env ../../node_modules/tsx/dist/cli.mjs general.ts"
+  },
+  "dependencies": {
+    "@runto/benchmark": "workspace:*",
+    "@runto/core": "workspace:*",
+    "@runto/provider-vercel": "workspace:*"
+  }
+}

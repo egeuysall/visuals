@@ -1,0 +1,13 @@
+node_modules
+dist
+.next
+coverage
+.turbo
+*.tsbuildinfo
+*.DS_Store
+.env
+.env.*
+!.env.example
+runtime-events.jsonl
+.aar-cache
+artifacts/benchmarks

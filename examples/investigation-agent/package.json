@@ -1,0 +1,12 @@
+{
+  "name": "navo-example-investigation-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=../../.env ../../node_modules/tsx/dist/cli.mjs index.ts"
+  },
+  "dependencies": {
+    "@runto/core": "workspace:*",
+    "@runto/provider-vercel": "workspace:*"
+  }
+}

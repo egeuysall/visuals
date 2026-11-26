@@ -1,0 +1,11 @@
+{
+  "name": "navo-docs",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  }
+}

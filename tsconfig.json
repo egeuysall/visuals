@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@runto/adapter-vercel-ai": ["packages/adapter-vercel-ai/src/index.ts"],
+      "@runto/benchmark": ["packages/benchmark/src/index.ts"],
+      "@runto/cache": ["packages/cache/src/index.ts"],
+      "@runto/context": ["packages/context/src/index.ts"],
+      "@runto/core": ["packages/core/src/index.ts"],
+      "@runto/mcp": ["packages/mcp/src/index.ts"],
+      "@runto/provider-anthropic": ["packages/provider-anthropic/src/index.ts"],
+      "@runto/provider-openai": ["packages/provider-openai/src/index.ts"],
+      "@runto/provider-vercel": ["packages/provider-vercel/src/index.ts"],
+      "@runto/protocol": ["packages/protocol/src/index.ts"],
+      "@runto/scheduler": ["packages/scheduler/src/index.ts"],
+      "@runto/telemetry": ["packages/telemetry/src/index.ts"]
+    }
+  },
+  "include": ["vitest.config.ts", "tests/**/*.ts"]
+}

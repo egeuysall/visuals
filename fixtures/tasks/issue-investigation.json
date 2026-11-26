@@ -1,0 +1,5 @@
+{
+  "id": "issue-investigation",
+  "task": "Investigate issue ENG-142 and identify the likely root cause.",
+  "successCriteria": ["mentions ENG-142", "mentions stale reconnect cursor"]
+}

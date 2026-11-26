@@ -1,0 +1,35 @@
+{
+  "name": "@runto/gateway",
+  "version": "0.1.0",
+  "description": "Authenticated MCP gateway for Navo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/egeuysall/sdk"
+  },
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@runto/core": "workspace:*",
+    "@runto/mcp": "workspace:*"
+  }
+}
