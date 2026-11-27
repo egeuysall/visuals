@@ -29,6 +29,7 @@
     "@runto/protocol": "workspace:*",
     "@runto/scheduler": "workspace:*",
     "@runto/telemetry": "workspace:*",
+    "@cfworker/json-schema": "^4.1.1",
     "ajv": "^8.20.0"
   }
 }

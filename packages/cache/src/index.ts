@@ -2,9 +2,6 @@ import { mkdirSync } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-// Not an import: bundlers (Turbopack) cannot resolve node:sqlite through createRequire.
-const { DatabaseSync } = process.getBuiltinModule("node:sqlite");
-
 export type CachePolicy =
   | { mode: "never" }
   | { mode: "ttl"; ttlMs: number }
@@ -143,12 +140,15 @@ export class FileCacheAdapter implements CacheAdapter {
  * multi-process deployments.
  */
 export class SqliteCacheAdapter implements CacheAdapter {
-  private readonly database: InstanceType<typeof DatabaseSync>;
+  private readonly database: import("node:sqlite").DatabaseSync;
   private readonly maxEntries: number;
 
   constructor(file = ".aar-cache/cache.sqlite", maxEntries = 10_000) {
     mkdirSync(dirname(file), { recursive: true });
     this.maxEntries = Math.max(1, maxEntries);
+    // Loaded only when this adapter is used: Cloudflare Workers has no node:sqlite. Not an
+    // import, because bundlers (Turbopack) cannot resolve node:sqlite through createRequire.
+    const { DatabaseSync } = process.getBuiltinModule("node:sqlite");
     this.database = new DatabaseSync(file);
     this.database.exec(
       "CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, created_at INTEGER NOT NULL, expires_at INTEGER, version TEXT)",

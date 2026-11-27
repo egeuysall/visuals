@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { Validator } from "@cfworker/json-schema";
 import {
   type CacheAdapter,
   type CacheEntry,
@@ -287,6 +288,41 @@ const jsonValidator = new Ajv2020({ allErrors: false, strict: false });
 const legacyJsonValidator = new Ajv({ allErrors: false, strict: false });
 const validatorCache = new Map<string, JsonValidator>();
 
+/**
+ * Ajv writes validators as source code and evaluates it. Runtimes that forbid that, such as
+ * Cloudflare Workers, get an interpreter with the same answer.
+ */
+function compileSchema(engine: Ajv | Ajv2020, schema: JsonSchema): JsonValidator {
+  try {
+    return engine.compile(schema as never) as JsonValidator;
+  } catch (error) {
+    if (
+      !(
+        error instanceof Error &&
+        /code generation|EvalError|unsafe-eval/i.test(`${error.name} ${error.message}`)
+      )
+    )
+      throw error;
+    return interpretedValidator(schema);
+  }
+}
+
+export function interpretedValidator(schema: JsonSchema): JsonValidator {
+  const draft =
+    typeof schema.$schema === "string" && schema.$schema.includes("2020-12") ? "2020-12" : "7";
+  const interpreter = new Validator(schema as never, draft);
+  const validate: JsonValidator = (value: unknown) => {
+    const result = interpreter.validate(value);
+    validate.errors = result.errors.slice(-1).map((e) => ({
+      instancePath: e.instanceLocation.replace(/^#/, ""),
+      keyword: e.keyword,
+      message: e.error,
+    }));
+    return result.valid;
+  };
+  return validate;
+}
+
 export function validateToolInput(
   value: unknown,
   schema: JsonSchema,
@@ -300,7 +336,7 @@ export function validateToolInput(
         typeof schema.$schema === "string" && schema.$schema.includes("2020-12")
           ? jsonValidator
           : legacyJsonValidator;
-      validator = engine.compile(schema as never) as JsonValidator;
+      validator = compileSchema(engine, schema);
       validatorCache.set(key, validator);
     } catch (error) {
       return `${path} has an invalid schema: ${error instanceof Error ? error.message : String(error)}`;
