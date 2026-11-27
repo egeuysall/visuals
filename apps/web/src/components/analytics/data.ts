@@ -2,6 +2,10 @@ import recorded from "@/data/recorded-benchmark.json";
 import type { ArmName, Run } from "@/lib/types";
 
 export const ARMS: ArmName[] = ["baseline", "optimized"];
+export const ARM_LABEL: Record<ArmName, string> = {
+  baseline: "standard",
+  optimized: "optimized",
+};
 
 export interface Point {
   latencyMs: number;
@@ -32,11 +36,11 @@ export const METRICS: {
   worse: string;
   format: (n: number) => string;
 }[] = [
-  { key: "costUsd", label: "est. cost", better: "cheaper", worse: "pricier", format: dollars },
-  { key: "latencyMs", label: "latency", better: "faster", worse: "slower", format: seconds },
-  { key: "toolMs", label: "tool phase", better: "faster", worse: "slower", format: seconds },
-  { key: "inputTokens", label: "input tokens", better: "fewer", worse: "more", format: count },
-  { key: "outputTokens", label: "output tokens", better: "fewer", worse: "more", format: count },
+  { key: "costUsd", label: "cost", better: "cheaper", worse: "pricier", format: dollars },
+  { key: "latencyMs", label: "total time", better: "faster", worse: "slower", format: seconds },
+  { key: "toolMs", label: "looking things up", better: "faster", worse: "slower", format: seconds },
+  { key: "inputTokens", label: "text read", better: "less", worse: "more", format: count },
+  { key: "outputTokens", label: "text written", better: "less", worse: "more", format: count },
 ];
 
 export const recordedPairs: Pair[] = recorded.control.flatMap((c, i) => {
@@ -51,6 +55,6 @@ export const recordedPairs: Pair[] = recorded.control.flatMap((c, i) => {
 });
 
 export const recordedPricing = recorded.pricing;
-export const recordedLabel = `${recorded.model}, ${recorded.generatedAt.slice(0, 10)}, ${recordedPairs.length} runs per arm`;
+export const recordedLabel = `${recordedPairs.length} tries each way`;
 
 export const successful = (r: Run) => r.baseline.success && r.optimized.success;

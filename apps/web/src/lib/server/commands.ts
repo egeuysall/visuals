@@ -11,21 +11,18 @@ import { memoryFor } from "./memory";
 import { DEFAULT_TASK, incidentSources } from "./scenario";
 import { modelName, pricing } from "./workers-ai";
 
-const HELP = `run ["task"]             run the task twice: baseline, then the optimized runtime
-  --no-parallel          keep tool calls serial
-  --no-compact           send full tool results back to the model
-  --no-schema            send uncompiled tool schemas
-  --thinking             keep model reasoning on in the optimized arm
-remember "fact"          save to your own memory (kaibo)
-recall "question"        ask your memory
-stats                    your runs, as numbers
-bench                    the recorded gpt-5 benchmark
-tools                    what the agent can call
-status                   model and memory configuration
-reset                    delete your runs (memory is kept)
-clear                    clear the screen`;
+const HELP = `type a question and press enter. the ai answers it twice and compares.
 
-const MEMORY_OFF = "memory is off: set KAIBO_KEY in apps/web/.env.local.";
+compare              run the sample question
+remember "fact"      save something about you
+recall "question"    ask what has been saved
+my results           your typical numbers so far
+earlier test         results from a longer test
+reset                delete your results (saved facts stay)
+clear                clear this screen`;
+
+const MEMORY_OFF = "memory is not set up yet.";
+const MEMORY_DOWN = "memory isn't available right now.";
 
 type Emit = (event: StreamEvent) => void;
 
@@ -36,22 +33,27 @@ export function tokenize(line: string): string[] {
 
 const times = (before: number, after: number) => {
   const r = ratio(before, after);
-  return r === null ? "n/a" : `${r.toFixed(2)}x`;
+  return r === null ? "n/a" : `${r.toFixed(1)}x`;
 };
 
-function table(base: Omit<ArmResult, "output" | "spans" | "success">, opt: typeof base): string {
+function table(
+  base: Omit<ArmResult, "output" | "spans" | "success" | "facts">,
+  opt: typeof base,
+): string {
+  const secs = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${Math.round(n)}ms`);
+  const whole = (n: number) => Math.round(n).toLocaleString("en-US");
   const rows: [string, number, number, (n: number) => string][] = [
-    ["latency", base.latencyMs, opt.latencyMs, (n) => `${(n / 1000).toFixed(2)}s`],
-    ["tool phase", base.toolMs, opt.toolMs, (n) => `${Math.round(n)}ms`],
-    ["input tokens", base.inputTokens, opt.inputTokens, (n) => `${Math.round(n)}`],
-    ["output tokens", base.outputTokens, opt.outputTokens, (n) => `${Math.round(n)}`],
-    ["est. cost", base.costUsd, opt.costUsd, (n) => `$${n.toFixed(5)}`],
+    ["total time", base.latencyMs, opt.latencyMs, secs],
+    ["looking things up", base.toolMs, opt.toolMs, secs],
+    ["text read", base.inputTokens, opt.inputTokens, whole],
+    ["text written", base.outputTokens, opt.outputTokens, whole],
+    ["cost", base.costUsd, opt.costUsd, (n) => `$${n.toFixed(5)}`],
   ];
   return [
-    `${"".padEnd(14)}${"baseline".padStart(11)}${"optimized".padStart(11)}${"gain".padStart(8)}`,
+    `${"".padEnd(18)}${"standard".padStart(10)}${"optimized".padStart(11)}${"ratio".padStart(7)}`,
     ...rows.map(
       ([label, a, b, f]) =>
-        `${label.padEnd(14)}${f(a).padStart(11)}${f(b).padStart(11)}${times(a, b).padStart(8)}`,
+        `${label.padEnd(18)}${f(a).padStart(10)}${f(b).padStart(11)}${times(a, b).padStart(7)}`,
     ),
   ].join("\n");
 }
@@ -84,23 +86,34 @@ function medians(arms: ArmResult[]): ArmResult {
   };
 }
 
-const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
+/** Keeps service errors in the server log and out of what people read. */
+const logError = (what: string, error: unknown) =>
+  console.error(what, error instanceof Error ? error.message : error);
+
+/** Models like to answer in markdown, which a plain text screen shows as stray symbols. */
+const plain = (text: string) =>
+  text
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*|__|`|\\(?=_)/g, "")
+    .replace(/\s*\u2192\s*/g, " to ")
+    .replace(/\s*\u2014\s*/g, ", ");
 
 async function readMemory(
   memory: Kaibo | null,
   task: string,
 ): Promise<{ state: Run["memory"]; text: string; note: string }> {
-  if (!memory) return { state: "off", text: "", note: MEMORY_OFF };
+  if (!memory) return { state: "off", text: "", note: "" };
   try {
     const pack = await memory.recall(task);
-    if (!pack.found) return { state: "empty", text: "", note: "memory: nothing relevant yet." };
+    if (!pack.found) return { state: "empty", text: "", note: "" };
     return {
       state: "used",
       text: await memory.context(task),
-      note: "memory: found, added to both arms.",
+      note: "using what you've saved before.",
     };
-  } catch (e) {
-    return { state: "error", text: "", note: `memory failed, running without it: ${reason(e)}` };
+  } catch (error) {
+    logError("memory read failed", error);
+    return { state: "error", text: "", note: `${MEMORY_DOWN} continuing without it.` };
   }
 }
 
@@ -120,37 +133,40 @@ async function run(user: User, args: string[], emit: Emit, signal: AbortSignal) 
   }
   const task = words.join(" ").trim() || DEFAULT_TASK;
 
-  if (running.has(user.id)) return log("you already have a run in progress.");
+  if (running.has(user.id)) return log("one question at a time. the last one is still running.");
   running.add(user.id);
   try {
     if (!takeLiveRun(Number(process.env.LIVE_RUNS_PER_DAY || 50)))
-      return log("today's run limit is reached (LIVE_RUNS_PER_DAY).");
+      return log("the daily limit is reached. come back tomorrow.");
 
-    log(`model: ${modelName()} on cloudflare workers ai`);
     const memory = memoryFor(user.id);
     const recalled = await readMemory(memory, task);
-    log(recalled.note);
+    if (recalled.note) log(recalled.note);
+    log("answering both ways at once. this usually takes under a minute.");
+
     const input = recalled.text ? `${task}\n\n${recalled.text}` : task;
 
-    // Random order, so neither arm always benefits from a warm provider cache.
-    const order: ArmName[] =
-      Math.random() < 0.5 ? ["baseline", "optimized"] : ["optimized", "baseline"];
-    const results = {} as Record<ArmName, ArmResult>;
-    for (const arm of order) {
-      log(`running ${arm}...`);
+    // Side by side, so the wait is only as long as the slower one. Each is timed on its own.
+    const answer = async (arm: ArmName, label: string) => {
       const r = await runArm(
         arm,
         input,
         levers,
-        AbortSignal.any([signal, AbortSignal.timeout(180_000)]),
+        AbortSignal.any([signal, AbortSignal.timeout(120_000)]),
       );
-      results[arm] = r;
-      log(
-        r.success
-          ? `${arm}: ${(r.latencyMs / 1000).toFixed(2)}s, ${r.toolCalls} tool calls`
-          : `${arm} failed: ${r.error ?? "empty answer"}`,
-      );
-    }
+      if (r.error) logError(`${arm} run failed`, r.error);
+      const time = `${(r.latencyMs / 1000).toFixed(1)}s`;
+      if (r.success) log(`${label} way: done in ${time}`);
+      else if (r.error) log(`${label} way: did not finish after ${time}.`);
+      else if (!r.toolCalls) log(`${label} way: answered without looking anything up.`);
+      else log(`${label} way: gave no answer.`);
+      return r;
+    };
+    const [baseline, optimized] = await Promise.all([
+      answer("baseline", "standard"),
+      answer("optimized", "optimized"),
+    ]);
+    const results = { baseline, optimized };
 
     const result: Run = {
       id: randomUUID(),
@@ -165,23 +181,30 @@ async function run(user: User, args: string[], emit: Emit, signal: AbortSignal) 
     saveRun(user.id, result);
     emit({ type: "run", run: result });
     const ok = result.baseline.success && result.optimized.success;
-    log(`\n${table(result.baseline, result.optimized)}`);
-    log(
-      `key facts in the answer: baseline ${result.baseline.facts.found}/${result.baseline.facts.total}, optimized ${result.optimized.facts.found}/${result.optimized.facts.total}`,
-    );
-    if (!ok) log("one arm failed, so this run is left out of the summary.");
-    else if (result.baseline.toolCalls !== result.optimized.toolCalls)
+    if (!ok)
       log(
-        "note: the arms made different numbers of tool calls, so this is not a like for like comparison.",
+        "this one can't be compared fairly, so it is left out of your results. please try again.",
       );
-    log(`\n${result.optimized.output || "(no answer)"}`);
+    else {
+      const { baseline, optimized } = result;
+      log(`\n${table(baseline, optimized)}`);
+      log(
+        `key facts found in the answer: standard ${baseline.facts.found} of ${baseline.facts.total}, optimized ${optimized.facts.found} of ${optimized.facts.total}`,
+      );
+      if (baseline.toolCalls !== optimized.toolCalls)
+        log(
+          `heads up: standard checked ${baseline.toolCalls} sources and optimized checked ${optimized.toolCalls}, so this is not an exact match.`,
+        );
+    }
+    const shown = result.optimized.success ? result.optimized : result.baseline;
+    if (shown.success) log(`\nanswer\n${plain(shown.output)}`);
 
     // Only what the user asked is stored: model output is not treated as a fact.
     if (memory && words.length) {
       try {
         await memory.remember(`The user asked the incident agent: ${task}`);
-      } catch (e) {
-        log(`could not save to memory: ${reason(e)}`);
+      } catch (error) {
+        logError("memory write failed", error);
       }
     }
   } finally {
@@ -196,7 +219,12 @@ export async function execute(
   signal: AbortSignal,
 ): Promise<void> {
   const log = (text: string) => emit({ type: "log", text });
-  let words = tokenize(line);
+  const alias: Record<string, string> = {
+    compare: "run",
+    "my results": "stats",
+    "earlier test": "bench",
+  };
+  let words = tokenize(alias[line.toLowerCase()] ?? line);
   if (words[0] === "visuals") words = words.slice(1);
   const [command = "help", ...args] = words;
   const text = args.join(" ").trim();
@@ -208,33 +236,30 @@ export async function execute(
     case "run":
       return run(user, args, emit, signal);
     case "tools":
-      return log(incidentSources.map((s) => `${s.name.padEnd(24)}${s.description}`).join("\n"));
-    case "status":
-      return log(
-        `user      ${user.username}\nmodel     ${modelName()}\nmemory    ${process.env.KAIBO_KEY ? "kaibo, scoped to you" : "off"}`,
-      );
+      return log(incidentSources.map((s) => s.description).join("\n"));
     case "remember":
     case "recall": {
-      if (!text) return log(`usage: ${command} "..."`);
+      if (!text) return log(`add some text, like: ${command} "..."`);
       if (text.length > 2_000) return log("keep it under 2000 characters.");
       const memory = memoryFor(user.id);
       if (!memory) return log(MEMORY_OFF);
       try {
         if (command === "remember") {
           await memory.remember(text, { wait: true });
-          return log("remembered.");
+          return log("saved.");
         }
         const pack = await memory.recall(text);
-        return log(pack.found ? String(pack.answer) : `no answer: ${pack.reason}`);
-      } catch (e) {
-        return log(`memory failed: ${reason(e)}`);
+        return log(pack.found ? String(pack.answer) : "nothing saved about that yet.");
+      } catch (error) {
+        logError("memory command failed", error);
+        return log(MEMORY_DOWN);
       }
     }
     case "stats": {
       const all = listRuns(user.id).filter((r) => r.baseline.success && r.optimized.success);
-      if (!all.length) return log("no successful runs yet. type run.");
+      if (!all.length) return log("no results yet. press compare to start.");
       return log(
-        `median of ${all.length}\n${table(medians(all.map((r) => r.baseline)), medians(all.map((r) => r.optimized)))}`,
+        `your typical result over ${all.length}\n${table(medians(all.map((r) => r.baseline)), medians(all.map((r) => r.optimized)))}`,
       );
     }
     case "bench": {
@@ -250,14 +275,16 @@ export async function execute(
           })),
         );
       return log(
-        `recorded ${recorded.generatedAt.slice(0, 10)}, ${recorded.model}, ${recorded.control.length} runs per arm, medians\n${table(arm(recorded.control), arm(recorded.treatment))}`,
+        `an earlier test, ${recorded.control.length} tries each way, typical result\n${table(arm(recorded.control), arm(recorded.treatment))}`,
       );
     }
     case "reset":
       deleteRuns(user.id);
       emit({ type: "reset" });
-      return log("your runs are deleted.");
+      return log("your results are deleted.");
     default:
-      return log(`unknown command: ${command}. type help.`);
+      // Anything that reads like a question is one. A stray word is not worth a minute of waiting.
+      if (line.endsWith("?") || words.length >= 3) return run(user, [line], emit, signal);
+      return log("not sure what you mean. ask a full question, or type help.");
   }
 }

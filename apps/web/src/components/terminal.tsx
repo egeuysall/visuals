@@ -9,13 +9,18 @@ import {
   InputGroupInput,
   InputGroupText,
 } from "@/components/ui/input-group";
-import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import type { Run, StreamEvent } from "@/lib/types";
 
 type Entry = { command: string; output: string };
 
-const SUGGESTIONS = ["run", "run --thinking", "run --no-compact", "bench", "help"];
+/** Buttons say what happens; the command behind each one stays out of the way. */
+const SUGGESTIONS = [
+  { label: "compare", command: "run" },
+  { label: "my results", command: "stats" },
+  { label: "earlier test", command: "bench" },
+  { label: "help", command: "help" },
+];
 
 export function Terminal({
   username,
@@ -30,6 +35,7 @@ export function Terminal({
   const [entries, setEntries] = useState<Entry[]>([]);
   const [history, setHistory] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [seconds, setSeconds] = useState(0);
   const transcript = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const abort = useRef<AbortController | null>(null);
@@ -39,6 +45,16 @@ export function Terminal({
     if (transcript.current) transcript.current.scrollTop = transcript.current.scrollHeight;
   }, [entries, busy]);
   useEffect(() => () => abort.current?.abort(), []);
+  // A visible clock, so a long answer does not look stuck.
+  useEffect(() => {
+    if (!busy) return;
+    const started = Date.now();
+    const timer = setInterval(() => setSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => {
+      clearInterval(timer);
+      setSeconds(0);
+    };
+  }, [busy]);
 
   const print = (text: string) =>
     setEntries((all) => {
@@ -50,14 +66,14 @@ export function Terminal({
       ];
     });
 
-  async function run(raw: string) {
+  async function run(raw: string, label?: string) {
     const line = raw.trim();
     if (!line || busy) return;
     setCommand("");
     cursor.current = -1;
     setHistory((h) => [...h.filter((x) => x !== line), line].slice(-100));
     if (line === "clear") return setEntries([]);
-    setEntries((all) => [...all.slice(-19), { command: line, output: "" }]);
+    setEntries((all) => [...all.slice(-19), { command: label ?? line, output: "" }]);
     setBusy(true);
     abort.current = new AbortController();
     try {
@@ -84,7 +100,7 @@ export function Terminal({
         }
       }
     } catch {
-      print(abort.current.signal.aborted ? "cancelled." : "the connection dropped. try again.");
+      print(abort.current.signal.aborted ? "stopped." : "the connection dropped. try again.");
     } finally {
       setBusy(false);
       input.current?.focus({ preventScroll: true });
@@ -108,7 +124,7 @@ export function Terminal({
 
   return (
     <section
-      aria-label="terminal"
+      aria-label="chat"
       className="flex h-[70dvh] min-h-0 min-w-0 flex-col border-b border-border lg:h-auto lg:border-r lg:border-b-0"
     >
       <div
@@ -116,18 +132,25 @@ export function Terminal({
         className="min-h-0 flex-1 overflow-auto px-4 py-4 text-xs sm:px-5"
         aria-live="polite"
       >
-        <p className="leading-5 text-muted-foreground">
-          visuals · signed in as {username} · your runs and memory are private to you
-        </p>
         {entries.length === 0 && (
-          <p className="mt-4 leading-5 text-muted-foreground">
-            type <code>run</code> to compare the baseline agent with the optimized runtime.
-          </p>
+          <div className="max-w-md leading-5">
+            <p className="font-semibold">hi {username}, ask about the checkout problem.</p>
+            <p className="mt-2 text-muted-foreground">
+              promo codes started failing in a sample online store. the ai answers twice, the
+              standard way and the optimized way, and you see which one was cheaper and faster. your
+              results are private to you.
+            </p>
+          </div>
         )}
-        <div className="mt-4 space-y-4">
+        <div className="space-y-5">
           {entries.map((e, i) => (
             <div key={i}>
-              <p className="leading-5 font-semibold normal-case">$ {e.command}</p>
+              <p className="mb-1 leading-5 font-semibold normal-case">
+                <span aria-hidden className="text-muted-foreground">
+                  &gt;{" "}
+                </span>
+                {e.command}
+              </p>
               <div className="normal-case">
                 <CliAnsiOutput output={e.output} />
               </div>
@@ -135,7 +158,12 @@ export function Terminal({
           ))}
           {busy && (
             <p className="flex items-center gap-2 text-muted-foreground">
-              <Spinner className="size-3" /> running
+              <Spinner className="size-3" /> working on it
+              {seconds > 0 && (
+                <span aria-hidden className="tabular-nums">
+                  {seconds}s
+                </span>
+              )}
             </p>
           )}
         </div>
@@ -150,25 +178,30 @@ export function Terminal({
         <div className="flex flex-wrap gap-1.5">
           {SUGGESTIONS.map((s) => (
             <Button
-              key={s}
+              key={s.command}
               type="button"
               variant="outline"
               size="sm"
               disabled={busy}
-              onClick={() => void run(s)}
+              onClick={() => void run(s.command, s.label)}
             >
-              {s}
+              {s.label}
             </Button>
           ))}
+          {busy && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => abort.current?.abort()}>
+              stop
+            </Button>
+          )}
         </div>
-        <InputGroup className="h-11 border-border bg-transparent lg:h-9">
+        <InputGroup className="h-9 border-border bg-transparent">
           <InputGroupAddon>
-            <InputGroupText>$</InputGroupText>
+            <InputGroupText aria-hidden>&gt;</InputGroupText>
           </InputGroupAddon>
           <InputGroupInput
             ref={input}
-            aria-label="command"
-            placeholder='run "why are promo codes failing?"'
+            aria-label="your question"
+            placeholder="why are promo codes failing?"
             autoComplete="off"
             autoCapitalize="none"
             autoCorrect="off"
@@ -176,12 +209,10 @@ export function Terminal({
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={onKeyDown}
-            className="text-base sm:text-[13px]"
+            // 16px on touch screens, or iOS zooms the page when the field is focused.
+            className="text-xs pointer-coarse:text-base"
           />
         </InputGroup>
-        <p className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-          <Kbd>enter</Kbd> run <Kbd>↑</Kbd> history <Kbd>ctrl c</Kbd> cancel <Kbd>ctrl l</Kbd> clear
-        </p>
       </form>
     </section>
   );

@@ -9,10 +9,19 @@ import {
 } from "@/components/ui/chart";
 import { median } from "@/lib/stats";
 import type { ArmName, Run, Span } from "@/lib/types";
-import { ARMS, compact, dollars, METRICS, type MetricKey, type Pair, seconds } from "./data";
+import {
+  ARM_LABEL,
+  ARMS,
+  compact,
+  dollars,
+  METRICS,
+  type MetricKey,
+  type Pair,
+  seconds,
+} from "./data";
 
 const arms: ChartConfig = {
-  baseline: { label: "baseline", color: "var(--arm-baseline)" },
+  baseline: { label: "standard", color: "var(--arm-baseline)" },
   optimized: { label: "optimized", color: "var(--arm-optimized)" },
 };
 const fill = (arm: ArmName) => `var(--arm-${arm})`;
@@ -29,9 +38,9 @@ function row(name: string, value: string, color: string) {
 }
 
 const PHASES = [
-  { key: "plan", label: "planning (model)", opacity: 0.55 },
-  { key: "tools", label: "tool calls", opacity: 1 },
-  { key: "answer", label: "answer (model)", opacity: 0.3 },
+  { key: "plan", label: "planning", opacity: 0.55 },
+  { key: "tools", label: "looking things up", opacity: 1 },
+  { key: "answer", label: "writing the answer", opacity: 0.3 },
 ] as const;
 
 function phases(spans: Span[]) {
@@ -53,7 +62,14 @@ export function PhaseChart({ run }: { run: Run }) {
         <BarChart data={data} layout="vertical" margin={{ left: 0, right: 8 }} barCategoryGap={8}>
           <CartesianGrid horizontal={false} />
           <XAxis type="number" tickFormatter={seconds} tickLine={false} axisLine={false} />
-          <YAxis type="category" dataKey="arm" width={72} tickLine={false} axisLine={false} />
+          <YAxis
+            type="category"
+            dataKey="arm"
+            width={72}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(arm: ArmName) => ARM_LABEL[arm]}
+          />
           <ChartTooltip
             cursor={false}
             content={
@@ -105,7 +121,7 @@ export function ToolChart({ run }: { run: Run }) {
     }),
   ) as Record<ArmName, Map<string, number[]>>;
   const names = [...new Set(ARMS.flatMap((arm) => [...times[arm].keys()]))];
-  if (!names.length) return <p className="text-xs text-muted-foreground">no tools were called.</p>;
+  if (!names.length) return <p className="text-xs text-muted-foreground">nothing was looked up.</p>;
   const data = names.map((name) => ({
     name: name.replaceAll("_", " "),
     baseline: times.baseline.get(name),
@@ -140,7 +156,7 @@ export function ToolChart({ run }: { run: Run }) {
               formatter={(value, name) => {
                 const [from, to] = value as unknown as [number, number];
                 return row(
-                  String(name),
+                  ARM_LABEL[name as ArmName],
                   `${seconds(from)} to ${seconds(to)}`,
                   fill(name as ArmName),
                 );
@@ -169,13 +185,13 @@ export function RunsChart({ pairs, metric }: { pairs: Pair[]; metric: MetricKey 
       <BarChart data={data} margin={{ left: 0, right: 0, top: 8 }} barGap={2}>
         <CartesianGrid vertical={false} />
         <XAxis dataKey="run" tickLine={false} axisLine={false} />
-        <YAxis width={64} tickLine={false} axisLine={false} tickFormatter={format} />
+        <YAxis width={74} tickLine={false} axisLine={false} tickFormatter={format} />
         <ChartTooltip
           content={
             <ChartTooltipContent
-              labelFormatter={(_, items) => `run ${items[0]?.payload.run}`}
+              labelFormatter={(_, items) => `try ${items[0]?.payload.run}`}
               formatter={(value, name) =>
-                row(String(name), format(Number(value)), fill(name as ArmName))
+                row(ARM_LABEL[name as ArmName], format(Number(value)), fill(name as ArmName))
               }
             />
           }
@@ -218,13 +234,13 @@ export function SpendChart({ pairs }: { pairs: Pair[] }) {
         </defs>
         <CartesianGrid vertical={false} />
         <XAxis dataKey="run" tickLine={false} axisLine={false} minTickGap={16} />
-        <YAxis width={64} tickLine={false} axisLine={false} tickFormatter={dollars} />
+        <YAxis width={74} tickLine={false} axisLine={false} tickFormatter={dollars} />
         <ChartTooltip
           content={
             <ChartTooltipContent
-              labelFormatter={(_, items) => `after ${items[0]?.payload.run} runs`}
+              labelFormatter={(_, items) => `after ${items[0]?.payload.run} tries`}
               formatter={(value, name) =>
-                row(String(name), dollars(Number(value)), fill(name as ArmName))
+                row(ARM_LABEL[name as ArmName], dollars(Number(value)), fill(name as ArmName))
               }
             />
           }
@@ -264,15 +280,20 @@ export function CostSplitChart({
       <ChartContainer config={arms} className="aspect-auto h-48 w-full">
         <BarChart data={data} margin={{ left: 0, right: 0, top: 8 }}>
           <CartesianGrid vertical={false} />
-          <XAxis dataKey="arm" tickLine={false} axisLine={false} />
-          <YAxis width={64} tickLine={false} axisLine={false} tickFormatter={dollars} />
+          <XAxis
+            dataKey="arm"
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(arm: ArmName) => ARM_LABEL[arm]}
+          />
+          <YAxis width={74} tickLine={false} axisLine={false} tickFormatter={dollars} />
           <ChartTooltip
             cursor={false}
             content={
               <ChartTooltipContent
                 formatter={(value, name, item) =>
                   row(
-                    `${name}, ${compact(item.payload[`${name}Tokens`])} tokens`,
+                    `text ${name === "input" ? "read" : "written"}, ${compact(item.payload[`${name}Tokens`])} tokens`,
                     dollars(Number(value)),
                     fill(item.payload.arm),
                   )
@@ -299,11 +320,11 @@ export function CostSplitChart({
       <ul className="flex gap-4 text-xs text-muted-foreground">
         <li className="flex items-center gap-1.5">
           <span className="size-2 rounded-[2px] bg-foreground" />
-          input
+          text read
         </li>
         <li className="flex items-center gap-1.5">
           <span className="size-2 rounded-[2px] bg-foreground opacity-45" />
-          output
+          text written
         </li>
       </ul>
     </>

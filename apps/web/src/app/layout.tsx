@@ -6,8 +6,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: "visuals",
-  description:
-    "Run an agent twice, baseline against an optimized runtime, and chart the difference.",
+  description: "See how much cheaper and faster an AI can answer, side by side.",
 };
 
 export const viewport: Viewport = {

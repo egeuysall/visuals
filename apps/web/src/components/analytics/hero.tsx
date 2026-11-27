@@ -1,5 +1,5 @@
 import { median, ratio } from "@/lib/stats";
-import { ARMS, METRICS, type MetricKey, type Pair } from "./data";
+import { ARM_LABEL, ARMS, METRICS, type MetricKey, type Pair } from "./data";
 
 const HERO: MetricKey[] = ["costUsd", "latencyMs", "toolMs", "inputTokens"];
 
@@ -34,7 +34,7 @@ export function Hero({ pairs }: { pairs: Pair[] }) {
                     key={arm}
                     className="grid grid-cols-[4.75rem_1fr_4.5rem] items-center gap-2 text-xs"
                   >
-                    <span className="text-muted-foreground">{arm}</span>
+                    <span className="text-muted-foreground">{ARM_LABEL[arm]}</span>
                     <span className="h-2">
                       <span
                         className={`block h-full min-w-0.5 rounded-r-sm transition-[width] duration-500 motion-reduce:transition-none ${arm === "optimized" ? "bg-arm-optimized" : "bg-arm-baseline"}`}

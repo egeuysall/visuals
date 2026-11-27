@@ -14,10 +14,10 @@ export default async function Home() {
   const gain = (k: "costUsd" | "latencyMs" | "toolDurationMs" | "inputTokens") =>
     `${ratio(median(recorded.control.map((r) => r[k])), median(recorded.treatment.map((r) => r[k])))!.toFixed(1)}x`;
   const rows = [
-    ["estimated cost per task", gain("costUsd"), "cheaper"],
-    ["input tokens", gain("inputTokens"), "fewer"],
-    ["tool phase", gain("toolDurationMs"), "faster"],
-    ["end to end", gain("latencyMs"), "faster"],
+    ["cost", gain("costUsd"), "cheaper"],
+    ["text the ai has to read", gain("inputTokens"), "less"],
+    ["looking things up", gain("toolDurationMs"), "faster"],
+    ["total time", gain("latencyMs"), "faster"],
   ];
   return (
     <SiteShell>
@@ -25,8 +25,8 @@ export default async function Home() {
         what if we build something that can make any ai model 5x cheaper and faster?
       </h1>
       <p className="animate-enter mt-2 text-xs leading-5 text-muted-foreground" style={delay(105)}>
-        by optimizing tool calling, tool results and reasoning. run the same task with and without
-        the runtime from a terminal, and see where the time and money go.
+        the ai looks things up all at once, reads less and overthinks less. ask it a question and
+        see how much time and money that saves.
       </p>
 
       <section className="animate-enter mt-8" style={delay(170)} aria-labelledby="measured">
@@ -47,9 +47,8 @@ export default async function Home() {
           ))}
         </dl>
         <p className="mt-2 text-xs leading-5 text-muted-foreground">
-          medians of {recorded.control.length} runs per arm, {recorded.model}, recorded{" "}
-          {recorded.generatedAt.slice(0, 10)} on one incident investigation task with twelve
-          read-only tools. one workload, not a general guarantee.
+          typical results from an earlier test with {recorded.control.length} tries each way, all on
+          one sample problem. your questions and other ai models can give different results.
         </p>
       </section>
 
