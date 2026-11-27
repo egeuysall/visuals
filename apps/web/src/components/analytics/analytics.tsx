@@ -25,48 +25,9 @@ import {
   successful,
 } from "./data";
 import { Hero } from "./hero";
+import { ArmLegend, Panel } from "./panel";
 
 type Source = "yours" | "recorded";
-
-function Panel({
-  title,
-  hint,
-  action,
-  children,
-}: {
-  title: string;
-  hint: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex min-w-0 flex-col gap-3 border-b border-border px-4 py-5 sm:px-5">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-xs font-semibold">{title}</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{hint}</p>
-        </div>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function Legend() {
-  return (
-    <ul className="flex gap-4 text-xs text-muted-foreground">
-      {ARMS.map((arm) => (
-        <li key={arm} className="flex items-center gap-1.5">
-          <span
-            className={`size-2 rounded-[2px] ${arm === "optimized" ? "bg-arm-optimized" : "bg-arm-baseline"}`}
-          />
-          {ARM_LABEL[arm]}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export function Analytics({ runs }: { runs: Run[] }) {
   const latest = runs.at(-1);
@@ -142,14 +103,14 @@ export function Analytics({ runs }: { runs: Run[] }) {
               <Panel
                 title="looking things up"
                 hint="standard checks one source at a time. optimized checks them together."
-                action={<Legend />}
+                action={<ArmLegend />}
               >
                 <ToolChart run={shown} />
               </Panel>
             </>
           )}
 
-          <Panel title="every try" hint="pick what to compare." action={<Legend />}>
+          <Panel title="every try" hint="pick what to compare." action={<ArmLegend />}>
             <div className="flex flex-wrap gap-1" role="group" aria-label="what to compare">
               {METRICS.map((m) => (
                 <Button
@@ -169,7 +130,7 @@ export function Analytics({ runs }: { runs: Run[] }) {
           <div className="grid shrink-0 grid-cols-1 xl:grid-cols-2 xl:divide-x xl:divide-border">
             <Panel title="spend adds up" hint="estimated total across these tries.">
               <SpendChart pairs={pairs} />
-              <Legend />
+              <ArmLegend />
             </Panel>
             <Panel title="where the money goes" hint="estimated cost of a typical try.">
               <CostSplitChart pairs={pairs} pricing={pricing} />

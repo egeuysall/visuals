@@ -8,7 +8,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { median } from "@/lib/stats";
-import type { ArmName, Run, Span } from "@/lib/types";
+import type { ArmName, Span } from "@/lib/types";
 import {
   ARM_LABEL,
   ARMS,
@@ -19,6 +19,9 @@ import {
   type Pair,
   seconds,
 } from "./data";
+
+/** The part of a result the timelines draw. */
+type Timeline = Record<ArmName, { spans: Span[] }>;
 
 const arms: ChartConfig = {
   baseline: { label: "standard", color: "var(--arm-baseline)" },
@@ -54,7 +57,7 @@ function phases(spans: Span[]) {
 }
 
 /** End to end time of one run, split into planning, tools and the answer. */
-export function PhaseChart({ run }: { run: Run }) {
+export function PhaseChart({ run }: { run: Timeline }) {
   const data = ARMS.map((arm) => ({ arm, ...phases(run[arm].spans) }));
   return (
     <>
@@ -112,7 +115,7 @@ export function PhaseChart({ run }: { run: Run }) {
 }
 
 /** Each tool call, timed from the arm's first tool call: serial makes a staircase. */
-export function ToolChart({ run }: { run: Run }) {
+export function ToolChart({ run }: { run: Timeline }) {
   const times = Object.fromEntries(
     ARMS.map((arm) => {
       const tools = run[arm].spans.filter((s) => s.kind === "tool");

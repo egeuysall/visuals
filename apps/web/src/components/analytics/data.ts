@@ -1,3 +1,4 @@
+import recent from "@/data/recent-tries.json";
 import recorded from "@/data/recorded-benchmark.json";
 import type { ArmName, Run } from "@/lib/types";
 
@@ -58,3 +59,18 @@ export const recordedPricing = recorded.pricing;
 export const recordedLabel = `${recordedPairs.length} tries each way`;
 
 export const successful = (r: Run) => r.baseline.success && r.optimized.success;
+
+/** Real comparisons from testing this app, used on the landing page. */
+export const recentPairs: Pair[] = recent.pairs;
+export const recentPricing = recent.pricing;
+
+const gaps = recent.pairs.map((p) => p.baseline.latencyMs / p.optimized.latencyMs);
+const allFacts = (arm: ArmName) =>
+  recent.pairs.filter((p) => p[arm].factsFound === p[arm].factsTotal).length;
+
+export const recentSummary = {
+  standardFull: allFacts("baseline"),
+  optimizedFull: allFacts("optimized"),
+  slowest: Math.min(...gaps).toFixed(1),
+  fastest: Math.max(...gaps).toFixed(1),
+};

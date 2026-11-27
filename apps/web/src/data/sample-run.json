@@ -1,0 +1,193 @@
+{
+ "recordedAt": "2026-11-27T00:13:37.699Z",
+ "baseline": {
+  "latencyMs": 33797,
+  "toolCalls": 12,
+  "facts": {
+   "found": 4,
+   "total": 4
+  },
+  "costUsd": 0.0034298815,
+  "spans": [
+   {
+    "kind": "model",
+    "name": "model call 1",
+    "start": 1,
+    "end": 9781
+   },
+   {
+    "kind": "tool",
+    "name": "get_issue",
+    "start": 9781,
+    "end": 9903
+   },
+   {
+    "kind": "tool",
+    "name": "get_comments",
+    "start": 9905,
+    "end": 10026
+   },
+   {
+    "kind": "tool",
+    "name": "list_related_commits",
+    "start": 10027,
+    "end": 10149
+   },
+   {
+    "kind": "tool",
+    "name": "get_code_ownership",
+    "start": 10151,
+    "end": 10272
+   },
+   {
+    "kind": "tool",
+    "name": "search_logs",
+    "start": 10273,
+    "end": 10394
+   },
+   {
+    "kind": "tool",
+    "name": "get_deployment",
+    "start": 10396,
+    "end": 10516
+   },
+   {
+    "kind": "tool",
+    "name": "get_metrics",
+    "start": 10518,
+    "end": 10639
+   },
+   {
+    "kind": "tool",
+    "name": "get_feature_flags",
+    "start": 10641,
+    "end": 10762
+   },
+   {
+    "kind": "tool",
+    "name": "search_runbook",
+    "start": 10764,
+    "end": 10886
+   },
+   {
+    "kind": "tool",
+    "name": "search_design_docs",
+    "start": 10888,
+    "end": 11008
+   },
+   {
+    "kind": "tool",
+    "name": "list_recent_changes",
+    "start": 11011,
+    "end": 11131
+   },
+   {
+    "kind": "tool",
+    "name": "get_incident_history",
+    "start": 11133,
+    "end": 11254
+   },
+   {
+    "kind": "model",
+    "name": "model call 2",
+    "start": 11257,
+    "end": 33796
+   }
+  ]
+ },
+ "optimized": {
+  "latencyMs": 14031,
+  "toolCalls": 12,
+  "facts": {
+   "found": 3,
+   "total": 4
+  },
+  "costUsd": 0.000505736,
+  "spans": [
+   {
+    "kind": "model",
+    "name": "model call 1",
+    "start": 2,
+    "end": 3905
+   },
+   {
+    "kind": "tool",
+    "name": "get_issue",
+    "start": 3910,
+    "end": 4031
+   },
+   {
+    "kind": "tool",
+    "name": "get_comments",
+    "start": 3910,
+    "end": 4032
+   },
+   {
+    "kind": "tool",
+    "name": "list_related_commits",
+    "start": 3910,
+    "end": 4033
+   },
+   {
+    "kind": "tool",
+    "name": "get_code_ownership",
+    "start": 3910,
+    "end": 4035
+   },
+   {
+    "kind": "tool",
+    "name": "search_logs",
+    "start": 3910,
+    "end": 4035
+   },
+   {
+    "kind": "tool",
+    "name": "get_deployment",
+    "start": 3910,
+    "end": 4036
+   },
+   {
+    "kind": "tool",
+    "name": "get_metrics",
+    "start": 3910,
+    "end": 4036
+   },
+   {
+    "kind": "tool",
+    "name": "get_feature_flags",
+    "start": 3910,
+    "end": 4037
+   },
+   {
+    "kind": "tool",
+    "name": "search_runbook",
+    "start": 3910,
+    "end": 4038
+   },
+   {
+    "kind": "tool",
+    "name": "search_design_docs",
+    "start": 3910,
+    "end": 4039
+   },
+   {
+    "kind": "tool",
+    "name": "list_recent_changes",
+    "start": 3910,
+    "end": 4039
+   },
+   {
+    "kind": "tool",
+    "name": "get_incident_history",
+    "start": 3910,
+    "end": 4040
+   },
+   {
+    "kind": "model",
+    "name": "model call 2",
+    "start": 4041,
+    "end": 14030
+   }
+  ]
+ }
+}

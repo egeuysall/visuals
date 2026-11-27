@@ -1,0 +1,276 @@
+{
+ "note": "every complete, grounded comparison from local testing of this app",
+ "model": "@cf/zai-org/glm-4.7-flash",
+ "pricing": {
+  "input": 0.0605,
+  "output": 0.4
+ },
+ "from": "2026-11-26T23:55:47.220Z",
+ "to": "2026-11-27T00:25:30.619Z",
+ "pairs": [
+  {
+   "baseline": {
+    "latencyMs": 23671,
+    "modelMs": 22780,
+    "toolMs": 883,
+    "inputTokens": 28633,
+    "outputTokens": 1338,
+    "costUsd": 0.0022674965,
+    "toolCalls": 7,
+    "factsFound": 3,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 7299,
+    "modelMs": 7162,
+    "toolMs": 133,
+    "inputTokens": 4390,
+    "outputTokens": 476,
+    "costUsd": 0.000455995,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 21075,
+    "modelMs": 19600,
+    "toolMs": 1474,
+    "inputTokens": 48161,
+    "outputTokens": 1082,
+    "costUsd": 0.0033465404999999996,
+    "toolCalls": 12,
+    "factsFound": 3,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 9602,
+    "modelMs": 9467,
+    "toolMs": 133,
+    "inputTokens": 4394,
+    "outputTokens": 495,
+    "costUsd": 0.000463837,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 36066,
+    "modelMs": 34593,
+    "toolMs": 1470,
+    "inputTokens": 48166,
+    "outputTokens": 1768,
+    "costUsd": 0.0036212429999999997,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 8729,
+    "modelMs": 8594,
+    "toolMs": 132,
+    "inputTokens": 4381,
+    "outputTokens": 692,
+    "costUsd": 0.0005418504999999999,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 29763,
+    "modelMs": 28305,
+    "toolMs": 1469,
+    "inputTokens": 48163,
+    "outputTokens": 1197,
+    "costUsd": 0.0033926614999999997,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 16722,
+    "modelMs": 16569,
+    "toolMs": 148,
+    "inputTokens": 3343,
+    "outputTokens": 275,
+    "costUsd": 0.0003122515,
+    "toolCalls": 6,
+    "factsFound": 2,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 54793,
+    "modelMs": 53308,
+    "toolMs": 1479,
+    "inputTokens": 48183,
+    "outputTokens": 1121,
+    "costUsd": 0.0033634715,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 20283,
+    "modelMs": 20145,
+    "toolMs": 129,
+    "inputTokens": 3201,
+    "outputTokens": 309,
+    "costUsd": 0.00031726050000000004,
+    "toolCalls": 5,
+    "factsFound": 3,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 33797,
+    "modelMs": 32319,
+    "toolMs": 1475,
+    "inputTokens": 48203,
+    "outputTokens": 1284,
+    "costUsd": 0.0034298815,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 14031,
+    "modelMs": 13893,
+    "toolMs": 136,
+    "inputTokens": 4432,
+    "outputTokens": 594,
+    "costUsd": 0.000505736,
+    "toolCalls": 12,
+    "factsFound": 3,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 62607,
+    "modelMs": 61122,
+    "toolMs": 1481,
+    "inputTokens": 48197,
+    "outputTokens": 1535,
+    "costUsd": 0.0035299185,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 28469,
+    "modelMs": 28329,
+    "toolMs": 133,
+    "inputTokens": 3885,
+    "outputTokens": 504,
+    "costUsd": 0.0004366425,
+    "toolCalls": 9,
+    "factsFound": 4,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 22201,
+    "modelMs": 20709,
+    "toolMs": 1480,
+    "inputTokens": 48561,
+    "outputTokens": 532,
+    "costUsd": 0.0031507405,
+    "toolCalls": 12,
+    "factsFound": 1,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 7283,
+    "modelMs": 7128,
+    "toolMs": 147,
+    "inputTokens": 3949,
+    "outputTokens": 266,
+    "costUsd": 0.0003453145,
+    "toolCalls": 7,
+    "factsFound": 2,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 48925,
+    "modelMs": 47443,
+    "toolMs": 1480,
+    "inputTokens": 48187,
+    "outputTokens": 1029,
+    "costUsd": 0.0033269135,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 32980,
+    "modelMs": 32841,
+    "toolMs": 136,
+    "inputTokens": 4420,
+    "outputTokens": 484,
+    "costUsd": 0.00046101,
+    "toolCalls": 12,
+    "factsFound": 3,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 47441,
+    "modelMs": 45973,
+    "toolMs": 1466,
+    "inputTokens": 48235,
+    "outputTokens": 2133,
+    "costUsd": 0.0037714175,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 19816,
+    "modelMs": 19680,
+    "toolMs": 130,
+    "inputTokens": 4093,
+    "outputTokens": 833,
+    "costUsd": 0.0005808265,
+    "toolCalls": 10,
+    "factsFound": 4,
+    "factsTotal": 4
+   }
+  },
+  {
+   "baseline": {
+    "latencyMs": 86729,
+    "modelMs": 85260,
+    "toolMs": 1468,
+    "inputTokens": 48235,
+    "outputTokens": 1696,
+    "costUsd": 0.0035966175,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   },
+   "optimized": {
+    "latencyMs": 13048,
+    "modelMs": 12892,
+    "toolMs": 147,
+    "inputTokens": 4456,
+    "outputTokens": 767,
+    "costUsd": 0.0005763879999999999,
+    "toolCalls": 12,
+    "factsFound": 4,
+    "factsTotal": 4
+   }
+  }
+ ]
+}

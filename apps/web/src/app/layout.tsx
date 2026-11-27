@@ -5,7 +5,8 @@ import "./globals.css";
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "visuals",
+  metadataBase: new URL("https://sdk.egeuysal.com"),
+  title: "sdk",
   description: "See how much cheaper and faster an AI can answer, side by side.",
 };
 
