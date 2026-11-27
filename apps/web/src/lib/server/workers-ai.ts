@@ -68,7 +68,7 @@ export function workersAiProvider(thinking: boolean): Provider {
       const system = request.instructions
         ? [{ role: "system", content: request.instructions }]
         : [];
-      const run = bindings().AI.run(modelName(), {
+      const input = {
         messages: [...system, ...toChat(request.messages, names)],
         ...(request.tools.length
           ? {
@@ -86,8 +86,22 @@ export function workersAiProvider(thinking: boolean): Provider {
           : {}),
         max_tokens: Math.min(request.maxOutputTokens ?? 4096, 4096),
         chat_template_kwargs: { enable_thinking: thinking },
-      });
-      const output = (await abortable(run, request.signal)) as Completion;
+      };
+      // Now and then the model returns neither text nor a tool request. One more try fixes it.
+      // The wasted attempt stays in the tokens and the time, so it is never free.
+      const usage = { inputTokens: 0, outputTokens: 0, cachedTokens: 0 };
+      let output: Completion = {};
+      for (let attempt = 0; attempt < 2; attempt++) {
+        output = (await abortable(
+          bindings().AI.run(modelName(), input),
+          request.signal,
+        )) as Completion;
+        usage.inputTokens += output.usage?.prompt_tokens ?? 0;
+        usage.outputTokens += output.usage?.completion_tokens ?? 0;
+        usage.cachedTokens += output.usage?.prompt_tokens_details?.cached_tokens ?? 0;
+        const message = output.choices?.[0]?.message;
+        if (message?.content?.trim() || message?.tool_calls?.length) break;
+      }
       const choice = output.choices?.[0];
       if (!choice?.message) throw new Error("the model returned no message");
       return {
@@ -97,11 +111,7 @@ export function workersAiProvider(thinking: boolean): Provider {
           toolId: ids.get(c.function.name) ?? c.function.name,
           arguments: c.function.arguments,
         })),
-        usage: {
-          inputTokens: output.usage?.prompt_tokens ?? 0,
-          outputTokens: output.usage?.completion_tokens ?? 0,
-          cachedTokens: output.usage?.prompt_tokens_details?.cached_tokens ?? 0,
-        },
+        usage,
         finishReason: choice.finish_reason,
       };
     },
