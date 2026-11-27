@@ -53,7 +53,7 @@ Two things we learned while testing:
 | | |
 | --- | --- |
 | **Prior work** | The agent runtime (`packages/`, `examples/`, `runtime-go/`, `services/`, `apps/dashboard`) is a snapshot of [egeuysall/sdk](https://github.com/egeuysall/sdk) at `497485e`, written before this repository (commits dated 2026-08-05). It is the first commit here. The GPT-5 recording was also made then. |
-| **Prior work** | The look, UI components and terminal pattern come from [kaibo](https://github.com/egeuysall/kaibo). Memory uses the published `kaibo` SDK. |
+| **Prior work** | The look, UI components and terminal pattern come from [kaibo](https://kaibo.egeuysal.com), whose repository is private. Memory uses the published `kaibo` SDK. |
 | **New** | Everything after the first commit: the web app in `apps/web` (comparison terminal, charts, accounts, memory, Cloudflare deployment) and the runtime fixes: compacted results keeping the facts, running on Workers without `node:sqlite`, and validating tool input without generating code. |
 
 The git history shows each step with its real time.
