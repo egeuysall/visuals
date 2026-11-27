@@ -1,203 +1,102 @@
-# visuals
+# sdk
 
-What if we build something that can make any AI model 5x cheaper and faster, by optimizing tool calling, tool results and reasoning? Then show the data.
+**What if we build something that can make any AI model 5x cheaper and faster?**
 
-visuals runs the same agent task twice, a baseline and an optimized runtime, from a terminal in the browser, and charts where the time and money went.
+Live: [sdk.egeuysal.com](https://sdk.egeuysal.com)
+
+Most of an agent's bill isn't the question you asked. It's how the agent works: it fetches things one at a time, reads every long tool result in full, and thinks at length before simple answers. This project changes those three things, keeps the model the same, and shows you the difference.
+
+Ask a question on the site. The same model answers twice, the standard way and the optimized way. Your optimized answer shows first, then charts compare cost, time and how much text the model had to read.
+
+## How far we got
+
+11 comparisons from testing this app, on one small model (`glm-4.7-flash` on Cloudflare Workers AI). Medians:
+
+| | Standard | Optimized | Difference |
+| --- | --- | --- | --- |
+| Cost per question | $0.0034 | $0.00046 | **7.4x cheaper** |
+| Total time | 36.1s | 14.0s | **2.6x faster** |
+| Text the model read (tokens) | 48,187 | 4,381 | **11.0x less** |
+| Tool calls, wall clock | 1.47s | 133ms | **11.1x faster** |
+
+**Cost passed 5x. Total time did not.** Speed ranged from 1.5x to 6.6x.
+
+**The catch:** the optimized answer mentioned all four key facts in 6 of 11 tries. The standard answer did in 8. In 5 tries the optimized side also checked fewer than all twelve sources.
+
+An earlier, larger test on GPT-5 (20 tries each way, recorded with the runtime before this repository) came out **4.1x cheaper** but only **1.2x faster**. A bigger model spends most of its time thinking and writing, which faster tool calls don't help.
+
+### What these numbers don't show
+
+- It is one task: investigating a made up production incident with twelve read-only tools, 120ms each. It says nothing about "any model" or other workloads.
+- "Key facts" is a keyword check, not a grade of the answer.
+- Most of the saving on this model comes from turning its reasoning off. Type `run --thinking` to see the gain without that.
+- The 11 tries include different questions, and the app changed during testing (for example, requiring a lookup before an answer). The raw numbers are in [`apps/web/src/data/recent-tries.json`](apps/web/src/data/recent-tries.json).
+- In the GPT-5 recording, the success check only looked at the shape of the report. It also predates the preview fix below, and today's benchmark script sets low reasoning on both sides, so don't credit its savings to reasoning.
+- Costs are estimates from token counts and list prices, not an invoice.
+
+## How it works
+
+| Change | What the runtime does |
+| --- | --- |
+| Tool calls | Runs independent reads together, with a concurrency limit. Writes are never run speculatively. |
+| Tool results | Shortens long results to a preview that keeps every field that fits, and summarizes only the ones that don't. |
+| Tool schemas | Sends compact tool definitions. |
+| Reasoning | Turns the model's long reasoning off for the optimized side. |
+
+Two things we learned while testing:
+
+- **Shortening can throw away the answer.** The first version dropped every list once one field got too big. The model said it only had "generic previews" and couldn't find the cause, while the dashboard still showed a saving. Fixed, with a test.
+- **A cheap answer can be a made up one.** With reasoning off, the model once answered without looking anything up and invented regional numbers, and the app called it 17.5x cheaper. Now it has to look something up first, and an answer with no lookups never counts.
 
 ## What existed before, and what is new here
 
 | | |
 | --- | --- |
-| **Prior work** | The agent runtime (`packages/`, `examples/`, `runtime-go/`, `services/`, `apps/dashboard`) is a snapshot of [egeuysall/sdk](https://github.com/egeuysall/sdk) at `497485e`, written before this repository (commits dated 2026-08-05). It is the first commit here. The recorded GPT-5 benchmark in `apps/web/src/data` was also produced then. |
-| **Prior work** | The look, the UI components and the terminal pattern come from [kaibo](https://github.com/egeuysall/kaibo). Memory uses the published `kaibo` SDK. |
-| **New** | Everything after the first commit: `apps/web`, `apps/model`, and two SDK fixes (`node:sqlite` under Turbopack, and compacted tool results dropping the facts the model needed). |
+| **Prior work** | The agent runtime (`packages/`, `examples/`, `runtime-go/`, `services/`, `apps/dashboard`) is a snapshot of [egeuysall/sdk](https://github.com/egeuysall/sdk) at `497485e`, written before this repository (commits dated 2026-08-05). It is the first commit here. The GPT-5 recording was also made then. |
+| **Prior work** | The look, UI components and terminal pattern come from [kaibo](https://github.com/egeuysall/kaibo). Memory uses the published `kaibo` SDK. |
+| **New** | Everything after the first commit: the web app in `apps/web` (comparison terminal, charts, accounts, memory, Cloudflare deployment) and the runtime fixes: compacted results keeping the facts, running on Workers without `node:sqlite`, and validating tool input without generating code. |
 
-## Numbers, and how far to trust them
+The git history shows each step with its real time.
 
-| Source | Cost | End to end | Input tokens | Sample |
-| --- | --- | --- | --- | --- |
-| `glm-4.7-flash` on Workers AI, this app | 7.2x cheaper | 2.7x faster | 11.0x fewer | median of 3 local runs, 2026-11-26 |
-| `gpt-5`, recorded with the SDK | 4.1x cheaper | 1.2x faster | 14.5x fewer | 20 runs per arm, 2026-08-05 |
+## The app
 
-- One task (an incident investigation with twelve read-only tools over made-up data, 120 ms each). Not a claim about "any model" or any workload.
-- 5x cheaper held in these samples on one model. **5x faster end to end did not**: only the tool phase gets there.
-- The optimized arm turns the model's reasoning off by default. That is a large part of the gain on `glm-4.7-flash`. Type `run --thinking` to see the gain without that.
-- The "key facts" figure is a keyword check, not a grade. Read the answers.
-- The table's first row was measured before lookups became required. Three runs afterwards, with different questions: 6.8x to 10.6x cheaper and 2.2x to 2.7x faster.
-- The optimized answer can be worse. In those three runs it checked 5 to 12 of 12 sources and found 3 or 4 of 4 key facts, where standard found 4 each time.
-- The optimized way runs first and its answer shows straight away. The standard way runs after it, often for 20 to 60 seconds. A model must look something up before it answers. An answer with no lookups is never counted as a saving, because one such run invented its facts.
-- The arms can make different numbers of tool calls. The terminal says when they do.
-- The recorded benchmark was produced before the preview fix, and its success check only looked at the shape of the report. Today's `examples/benchmark` sets low reasoning on both arms, so do not attribute its savings to reasoning.
-- Costs are estimates from token counts and list prices, not an invoice.
+- **Next.js on Cloudflare Workers** (OpenNext). The model runs through the Workers AI binding.
+- **D1** stores accounts and results.
+- **Memory** with [kaibo](https://kaibo.egeuysal.com): type `remember "..."`, and later questions use it. Each account has its own memory, named by an id from the signed session cookie, never by anything the browser sends. Only what you type is saved, not model output.
+- **Accounts**: a lowercase username and a 4 digit PIN. PINs are hashed with scrypt. Five wrong tries lock the account for 15 minutes, including tries sent at the same moment. A 4 digit PIN is demo grade, so don't protect anything valuable with it.
+- **Limits**: 20 comparisons per account per day, 200 for the whole site, and caps on sign ups and sign ins per network address.
 
-## Run it
+Commands in the box: `compare`, any question, `remember`, `recall`, `my results`, `earlier test`, `reset`, `help`. Advanced: `run --thinking`, `--no-parallel`, `--no-compact`, `--no-schema`.
 
-Node 22.14+, pnpm, and a Cloudflare account (`wrangler login`).
+## Run it locally
+
+You need Node 22.14+, pnpm, and a Cloudflare account (`pnpm --filter visuals-web exec wrangler login`). The model calls are real and billed to that account.
 
 ```bash
 pnpm install
 pnpm build
-cp apps/web/.env.example apps/web/.env.local   # add the kaibo values
-pnpm visuals                                   # model worker on :8787, web on :3000
+cp apps/web/.env.example apps/web/.env.local   # kaibo values are optional
+pnpm --filter visuals-web db:local             # create the local database
+pnpm web                                       # http://localhost:3000
 ```
 
-Sign up with a lowercase username and a 4 digit PIN, then press compare or type a question. `help` lists the commands. Advanced: `run --thinking`, `--no-parallel`, `--no-compact`, `--no-schema`.
+Tests: `pnpm test` for the runtime, `pnpm --filter visuals-web test` for the app.
 
-## How it works
+## Deploy
 
-- `apps/web`: Next.js. Server code runs both arms through `@runto/core`, streams the terminal output, and records a span for every model and tool call.
-- `apps/model`: a small Worker around the Workers AI binding. Without `MODEL_PROXY_TOKEN` it only answers on localhost.
-- **Memory**: kaibo (set `KAIBO_PROJECT` if your key covers every project), scoped with `withUser("visuals:<account id>")`. The id comes from the signed session cookie, never from the client. Recalled memory goes into both arms. Only what you type is saved, not model output.
-- **Auth**: username and PIN, scrypt hashed. Five wrong PINs lock the account for 15 minutes. A 4 digit PIN is demo-grade: do not protect anything valuable with it.
-- **Storage**: SQLite in `apps/web/.data`. It needs a persistent disk, so this does not run on serverless hosting as is.
-- **Limits**: sign-up is open, and `LIVE_RUNS_PER_DAY` is the only cap on spend across all users.
-
----
-
-# The runtime (imported)
-
-# Navo
-
-Framework-neutral TypeScript runtime for tool-using agents. It keeps a
-transparent control path, then lets discovery, schema/result/context
-compilation, freshness-aware caching, safe scheduling, and read-only
-speculation be enabled independently.
-
-## Quick start
+Change the database id, domain and `KAIBO_PROJECT` in `apps/web/wrangler.jsonc`, then:
 
 ```bash
-pnpm install
-pnpm test
 pnpm build
-pnpm --filter navo-example-agent start
-pnpm --filter navo-example-research-agent start
-pnpm --filter navo-example-investigation-agent start
-pnpm benchmark
-pnpm benchmark:general
+cd apps/web
+pnpm exec wrangler secret put SESSION_SECRET   # 32+ random characters
+pnpm exec wrangler secret put KAIBO_KEY        # optional, for memory
+pnpm db:remote
+pnpm cf:deploy
 ```
 
-The examples run with deterministic mock providers when no Gateway key is
-present. Set `AI_GATEWAY_API_KEY` in a local `.env` to make Vercel AI Gateway
-the default provider:
-
-```bash
-cp .env.example .env
-# edit .env and set AI_GATEWAY_API_KEY
-pnpm --filter navo-example-research-agent start
-```
-
-The examples then use `createVercelProvider({ gateway: true })`. Direct
-`createOpenAIProvider` and `createAnthropicProvider` adapters remain available.
-
-The local CLI is available with `node packages/cli/bin/navo.js help`. Start the
-loopback gateway with `pnpm --filter @runto/gateway start`.
-`pnpm benchmark` runs a control-vs-treatment production-incident benchmark and
-prints p95 latency, success rate, cost, and percentage deltas. Both groups use
-the same model-driven task and provider settings. The task asks GPT-5 to
-investigate ENG-142 using twelve independent read-only sources
-(issue, comments, commits, logs, deployment, metrics, flags, runbooks, and
-incident history), then produce a root-cause report. Control disables parallel
-execution; treatment uses validated read-only scheduling, bounded parallel
-execution, result compaction, and explicit safe batching guidance. With
-`AI_GATEWAY_API_KEY` present it uses
-Gateway by default; set
-`NAVO_BENCHMARK_LIVE=0` to force the deterministic local benchmark. Live mode
-is a local measurement, not a provider performance claim:
-
-```bash
-NAVO_BENCHMARK_LIVE=1 pnpm benchmark
-```
-
-Each run also writes `artifacts/benchmarks/latest/benchmark-results.json` and
-four SVG charts: `latency-by-task.svg`, `benchmark-summary.svg`,
-`cost-success-frontier.svg`, and `tool-scheduling.svg`. The tool chart now
-uses the runtime's measured tool-phase p95 from the same incident task; it
-does not relabel end-to-end model latency as tool speed. The fixture uses
-twelve independent 120 ms reads and concurrency twelve, so a successful
-treatment should approach the theoretical 12x tool-phase ceiling while the
-end-to-end chart still includes real GPT-5/Gateway latency. The frontier chart
-stays intentionally blank when token pricing or successful-run cost data is
-missing instead of inventing cost data. Failed attempts are marked in red,
-excluded from successful p95, and kept in the raw attempt-latency data.
-
-Control is the normal model-driven loop: GPT-5 selects the tools and the runtime
-executes them serially. Treatment uses the same model-driven loop, then batches
-independent reads through the bounded scheduler and compacts large results
-before the final model call. The summary's cost is estimated from reported
-input and output tokens multiplied by the configured rates; it is not an
-invoice.
-End-to-end latency includes Gateway/model time. Tool-phase latency excludes
-that model time, which is why the tool chart can show a larger improvement.
-
-Live mode defaults to three tasks to make p95 less dependent on one request;
-set `NAVO_BENCHMARK_TASKS` lower if you are testing a paid key. Set
-`NAVO_BENCHMARK_INPUT_COST_PER_MILLION` and
-`NAVO_BENCHMARK_OUTPUT_COST_PER_MILLION` to your model's current pricing if you
-want meaningful cost metrics; the runtime cannot infer gateway pricing safely.
-The defaults in `.env.example` are the published GPT-5 rates and should be
-updated when the Gateway model changes. `NAVO_INCIDENT_TOOL_DELAY_MS` and
-`NAVO_INCIDENT_MAX_CONCURRENCY` control the local I/O fixture and scheduler
-ceiling; they do not change the model or claim provider-side speed.
-
-## SDK
-
-```ts
-import { createMockProvider, createRuntime } from "@runto/core";
-
-const runtime = createRuntime({
-  provider: createMockProvider(async () => ({ text: "done", toolCalls: [] })),
-  tools: [],
-  optimizations: { cache: false, parallelExecution: false },
-});
-
-const result = await runtime.run({ task: "Summarize the state" });
-console.log(result.output, result.metrics);
-```
-
-The stable event schema lives in `@runto/protocol`. Events can
-be sent to memory, JSONL, OpenTelemetry-compatible exporters, or a managed
-ingestion service. Telemetry strings are redacted by default; enable
-`captureContent` only in a trusted environment. The local gateway exposes the
-same event records and tool registry through HTTP.
-
-## Package map
-
-- `packages/core`: runtime, tool registry, discovery, compilers, mock provider
-- `packages/protocol`: versioned Zod event protocol and JSON-schema projection
-- `packages/mcp`: MCP aggregation/gateway and discovery tools
-- `packages/telemetry`: memory, buffered JSONL, Convex, and OTel exporters
-- `packages/cache`: memory, filesystem, SQLite, and Redis/Valkey adapters
-- `packages/context`: deterministic token-budgeted context compiler
-- `packages/scheduler`: dependency-aware bounded scheduler
-- `packages/benchmark`: baseline/control-vs-treatment benchmark runner
-- `packages/provider-vercel`: Vercel AI SDK provider adapter
-- `packages/provider-openai`: direct OpenAI Responses API adapter
-- `packages/provider-anthropic`: direct Anthropic Messages API adapter
-- `packages/adapter-vercel-ai`: RuntimeTool-to-Vercel tool conversion
-- `packages/cli`: `navo` local CLI
-- `services/gateway`: local HTTP/MCP-style gateway
-- `services/trace-ingestion`: JSONL event ingestion service
-- `apps/dashboard`: local trace/performance/policy/usage portal
-- `runtime-go`: standard-library Go runtime, OpenAI/Anthropic adapters, and safe scheduler
-- `convex`: optional hosted event store deployed with the existing Convex CLI
-
-## Honest scope
-
-The local implementation uses memory/filesystem/SQLite adapters and a small
-local dashboard. Convex is the implemented hosted event store; deploy it with
-`pnpm convex:deploy` and set `NAVO_CONVEX_URL` plus
-`NAVO_CONVEX_INGEST_KEY`. Raw Postgres, ClickHouse, S3, Clerk, and Stripe remain
-deployment-specific integrations. Speculation is guarded read-only execution
-only; no write is ever speculated. Replay, workflow memory, dependency
-inference, cancellation, retries, and MCP invalidation are implemented.
-
-The benchmark is an evidence tool, not a production-wide guarantee. A claim
-requires representative workloads, live provider samples, failure cases,
-warm/cold runs, and enough paired repetitions for the target traffic shape.
-`pnpm benchmark:general` runs the same model-driven runtime against independent
-reads, dependency chains, and write barriers. Its local I/O fixture isolates
-scheduler behavior and is explicitly not an external-provider claim.
+The runtime has its own documentation in [`docs/runtime.md`](docs/runtime.md).
 
 ## License
 
-Apache License 2.0. See [LICENSE](./LICENSE).
+Apache 2.0. See [LICENSE](LICENSE).
