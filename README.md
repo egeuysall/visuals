@@ -1,3 +1,58 @@
+# visuals
+
+What if we build something that can make any AI model 5x cheaper and faster, by optimizing tool calling, tool results and reasoning? Then show the data.
+
+visuals runs the same agent task twice, a baseline and an optimized runtime, from a terminal in the browser, and charts where the time and money went.
+
+## What existed before, and what is new here
+
+| | |
+| --- | --- |
+| **Prior work** | The agent runtime (`packages/`, `examples/`, `runtime-go/`, `services/`, `apps/dashboard`) is a snapshot of [egeuysall/sdk](https://github.com/egeuysall/sdk) at `497485e`, written before this repository (commits dated 2026-08-05). It is the first commit here. The recorded GPT-5 benchmark in `apps/web/src/data` was also produced then. |
+| **Prior work** | The look, the UI components and the terminal pattern come from [kaibo](https://github.com/egeuysall/kaibo). Memory uses the published `kaibo` SDK. |
+| **New** | Everything after the first commit: `apps/web`, `apps/model`, and two SDK fixes (`node:sqlite` under Turbopack, and compacted tool results dropping the facts the model needed). |
+
+## Numbers, and how far to trust them
+
+| Source | Cost | End to end | Input tokens | Sample |
+| --- | --- | --- | --- | --- |
+| `glm-4.7-flash` on Workers AI, this app | 7.2x cheaper | 2.7x faster | 11.0x fewer | median of 3 local runs, 2026-11-26 |
+| `gpt-5`, recorded with the SDK | 4.1x cheaper | 1.2x faster | 14.5x fewer | 20 runs per arm, 2026-08-05 |
+
+- One task (an incident investigation with twelve read-only tools over made-up data, 120 ms each). Not a claim about "any model" or any workload.
+- 5x cheaper held in these samples on one model. **5x faster end to end did not**: only the tool phase gets there.
+- The optimized arm turns the model's reasoning off by default. That is a large part of the gain on `glm-4.7-flash`. Use `run --thinking` to see it without.
+- The "key facts" figure is a keyword check, not a grade. Read the answers.
+- The arms can make different numbers of tool calls. The terminal says when they do.
+- The recorded benchmark was produced before the preview fix, and its success check only looked at the shape of the report. Today's `examples/benchmark` sets low reasoning on both arms, so do not attribute its savings to reasoning.
+- Costs are estimates from token counts and list prices, not an invoice.
+
+## Run it
+
+Node 22.14+, pnpm, and a Cloudflare account (`wrangler login`).
+
+```bash
+pnpm install
+pnpm build
+cp apps/web/.env.example apps/web/.env.local   # add the kaibo values
+pnpm visuals                                   # model worker on :8787, web on :3000
+```
+
+Sign up with a lowercase username and a 4 digit PIN, then type `run`. `help` lists the commands.
+
+## How it works
+
+- `apps/web`: Next.js. Server code runs both arms through `@runto/core`, streams the terminal output, and records a span for every model and tool call.
+- `apps/model`: a small Worker around the Workers AI binding. Without `MODEL_PROXY_TOKEN` it only answers on localhost.
+- **Memory**: kaibo, scoped with `withUser("visuals:<account id>")`. The id comes from the signed session cookie, never from the client. Recalled memory goes into both arms. Only what you type is saved, not model output.
+- **Auth**: username and PIN, scrypt hashed. Five wrong PINs lock the account for 15 minutes. A 4 digit PIN is demo-grade: do not protect anything valuable with it.
+- **Storage**: SQLite in `apps/web/.data`. It needs a persistent disk, so this does not run on serverless hosting as is.
+- **Limits**: sign-up is open, and `LIVE_RUNS_PER_DAY` is the only cap on spend across all users.
+
+---
+
+# The runtime (imported)
+
 # Navo
 
 Framework-neutral TypeScript runtime for tool-using agents. It keeps a
