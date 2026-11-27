@@ -72,6 +72,9 @@ export function workersAiProvider(thinking: boolean): Provider {
               type: "function",
               function: { name: t.name, description: t.description, parameters: t.inputSchema },
             })),
+            // Until something has been looked up, the model has to look things up. Left to choose,
+            // it can answer from nothing and invent the facts.
+            ...(request.messages.some((m) => m.role === "tool") ? {} : { tool_choice: "required" }),
             max_tokens: request.maxOutputTokens ?? 4096,
             thinking,
           }),

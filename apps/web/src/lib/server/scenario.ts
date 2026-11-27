@@ -164,6 +164,8 @@ export const factCheck = (answer: string) => ({
 export const DEFAULT_TASK = "Investigate production issue ENG-142 and report the root cause.";
 
 export const SYSTEM_PROMPT = `You are the incident commander for production issue ENG-142.
-Use the read-only sources to answer the request. Unless the request is narrower, use each source once.
+Before answering, request every read-only source, all together in the same turn.
 Call each with {"issueId":"ENG-142"}. The reads are independent.
-Answer concisely and only with facts returned by tools.`;
+Answer the request concisely, using only facts the sources returned. Never invent a fact or a number.
+If the sources do not answer the request, say so.
+Write plain text in short paragraphs, with no markdown.`;

@@ -85,7 +85,8 @@ export async function runArm(
                 enabled: true,
                 maxConcurrency: incidentSources.length,
                 promptGuidance: true,
-                planningOutputTokens: 768,
+                // A tight cap suits short planning. With reasoning on it would cut the tool calls off.
+                ...(levers.thinking ? {} : { planningOutputTokens: 768 }),
               }
             : false,
           resultCompiler: levers.compact
@@ -104,7 +105,8 @@ export async function runArm(
     costUsd: m.estimatedCostUsd ?? 0,
     modelCalls: m.modelCalls ?? 0,
     toolCalls: m.toolCalls ?? 0,
-    success: !error && output.trim().length > 0,
+    // An answer that looked nothing up has no basis, however cheap and fast it was.
+    success: !error && output.trim().length > 0 && (m.toolCalls ?? 0) > 0,
     facts: factCheck(output),
     ...(error ? { error } : {}),
     output,
