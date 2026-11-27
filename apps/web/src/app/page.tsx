@@ -37,7 +37,7 @@ function Heading({
 }) {
   return (
     <div className="mb-4">
-      <h2 id={id} className="text-sm font-semibold">
+      <h2 id={id} className="text-[13px] font-semibold">
         {title}
       </h2>
       <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{children}</p>
@@ -56,14 +56,11 @@ export default async function Home() {
     ["total time", earlier("latencyMs"), "faster"],
   ];
   const actions = (
-    <div className="flex flex-wrap gap-3">
-      <Link href="/sign-up" className={buttonVariants({ size: "lg", className: "h-11 px-5" })}>
+    <div className="flex flex-wrap gap-2">
+      <Link href="/sign-up" className={buttonVariants()}>
         try it yourself
       </Link>
-      <Link
-        href="/sign-in"
-        className={buttonVariants({ size: "lg", variant: "outline", className: "h-11 px-5" })}
-      >
+      <Link href="/sign-in" className={buttonVariants({ variant: "outline" })}>
         sign in
       </Link>
     </div>
@@ -71,26 +68,26 @@ export default async function Home() {
 
   return (
     <SiteShell wide>
-      <section className="max-w-2xl">
+      <section className="max-w-xl">
         <h1
-          className="animate-enter text-2xl leading-9 font-semibold tracking-tight text-balance sm:text-3xl sm:leading-10"
+          className="animate-enter text-base leading-6 font-semibold text-balance sm:text-lg sm:leading-7"
           style={delay(40)}
         >
           what if we build something that can make any ai model 5x cheaper and faster?
         </h1>
         <p
-          className="animate-enter mt-4 text-sm leading-6 text-muted-foreground"
+          className="animate-enter mt-2 text-xs leading-5 text-muted-foreground"
           style={delay(105)}
         >
           we built an sdk that changes how an ai works instead of which ai you use. ask it a
           question, watch it answer the standard way and the optimized way, and see the difference.
         </p>
-        <div className="animate-enter mt-6" style={delay(170)}>
+        <div className="animate-enter mt-4" style={delay(170)}>
           {actions}
         </div>
       </section>
 
-      <section className="animate-enter mt-14" style={delay(235)} aria-labelledby="so-far">
+      <section className="animate-enter mt-10" style={delay(235)} aria-labelledby="so-far">
         <Heading id="so-far" title="how close we got">
           typical result from {recentPairs.length} test questions on one small ai model. cost passed
           5x. total time has not yet.
@@ -106,7 +103,7 @@ export default async function Home() {
         </p>
       </section>
 
-      <section className="mt-14" aria-labelledby="how">
+      <section className="mt-10" aria-labelledby="how">
         <Heading id="how" title="three changes">
           the ai model stays the same.
         </Heading>
@@ -121,21 +118,21 @@ export default async function Home() {
         </ol>
       </section>
 
-      <section className="mt-14" aria-labelledby="one">
+      <section className="mt-10" aria-labelledby="one">
         <Heading id="one" title="watch one question">
           the staircase is the standard way waiting its turn.
         </Heading>
         <OneQuestion />
       </section>
 
-      <section className="mt-14" aria-labelledby="all">
+      <section className="mt-10" aria-labelledby="all">
         <Heading id="all" title="all the tries">
           tap a measure to switch. hover a bar for the exact number.
         </Heading>
         <EveryTest />
       </section>
 
-      <section className="mt-14" aria-labelledby="earlier">
+      <section className="mt-10" aria-labelledby="earlier">
         <Heading id="earlier" title="an earlier test on a bigger model">
           {recorded.control.length} tries each way on the same sample problem. cheaper held up,
           speed barely moved: a bigger model spends most of its time thinking and writing.
@@ -148,15 +145,15 @@ export default async function Home() {
             >
               <dt className="text-muted-foreground">{label}</dt>
               <dd className="tabular-nums">
-                <span className="text-sm font-semibold">{value}</span> {word}
+                <span className="font-semibold">{value}</span> {word}
               </dd>
             </div>
           ))}
         </dl>
       </section>
 
-      <section className="mt-14 border-t border-border pt-10">
-        <p className="mb-5 text-sm font-semibold">ask it something and check our numbers.</p>
+      <section className="mt-10 border-t border-border pt-10">
+        <p className="mb-4 text-xs font-semibold">ask it something and check our numbers.</p>
         {actions}
       </section>
     </SiteShell>

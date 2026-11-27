@@ -37,7 +37,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           spellCheck={false}
           value={username}
           onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-          className="h-11 text-base sm:text-xs"
+          className="h-9 text-xs pointer-coarse:text-base"
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -57,7 +57,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         >
           <InputOTPGroup>
             {[0, 1, 2, 3].map((i) => (
-              <InputOTPSlot key={i} index={i} className="size-11 text-sm" />
+              <InputOTPSlot key={i} index={i} className="size-9 text-xs" />
             ))}
           </InputOTPGroup>
         </InputOTP>
@@ -68,7 +68,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       <Button
         type="submit"
         size="lg"
-        className="h-11"
+        className="h-9"
         disabled={pending || username.length < 3 || pin.length < 4}
       >
         {pending && <Spinner />}

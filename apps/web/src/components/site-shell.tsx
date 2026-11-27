@@ -9,7 +9,7 @@ export function SiteShell({ wide, children }: { wide?: boolean; children: React.
     <div
       className={`mx-auto flex min-h-dvh w-full flex-col px-4 py-8 sm:px-8 sm:py-10 ${wide ? "max-w-5xl" : "max-w-155"}`}
     >
-      <header className={`flex items-end justify-between gap-6 ${wide ? "pb-12" : "pb-8"}`}>
+      <header className={`flex items-end justify-between gap-6 pb-8`}>
         <Link href="/" className="text-[15px] font-semibold hover:text-muted-foreground">
           sdk
         </Link>

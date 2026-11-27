@@ -21,7 +21,7 @@ export function Hero({ pairs }: { pairs: Pair[] }) {
             <dt className="text-xs text-muted-foreground">{metric.label}</dt>
             <dd>
               <p className="mt-1 flex items-baseline gap-2">
-                <span className="text-4xl leading-none font-semibold tracking-tight">
+                <span className="text-xl leading-none font-semibold">
                   {r === null ? "n/a" : `${(better ? r : 1 / r).toFixed(1)}x`}
                 </span>
                 <span className="text-xs">
