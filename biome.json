@@ -30,7 +30,8 @@
       "!apps/web/src/data",
       "!apps/web/next-env.d.ts",
       "!.claude",
-      "!**/.wrangler"
+      "!**/.wrangler",
+      "!**/.open-next"
     ]
   },
   "overrides": [

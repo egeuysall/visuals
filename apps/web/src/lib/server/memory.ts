@@ -14,5 +14,5 @@ export function memoryFor(userId: string): Kaibo | null {
     timeoutMs: 20_000,
     // Needed with an organization wide key, which must say which project a call is about.
     project: process.env.KAIBO_PROJECT || undefined,
-  }).withUser(`visuals:${userId}`);
+  }).withUser(`sdk:${userId}`);
 }

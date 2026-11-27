@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sdk",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-11",
+  // global_fetch_strictly_public lets the worker reach kaibo, another worker on the same zone.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "ai": { "binding": "AI", "remote": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sdk",
+      "database_id": "28fbd69b-1864-4226-af84-fce0841e6fb0",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Cloudflare creates the DNS record for a custom domain on deploy.
+  "routes": [{ "pattern": "sdk.egeuysal.com", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "vars": {
+    "MODEL_NAME": "@cf/zai-org/glm-4.7-flash",
+    "KAIBO_URL": "https://kaibo.egeuysal.com",
+    "KAIBO_PROJECT": "kx792428ax548grfayt8hbsxnx8k1f2j",
+    "LIVE_RUNS_PER_DAY": "200",
+    "USER_RUNS_PER_DAY": "20"
+  }
+}

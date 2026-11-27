@@ -15,3 +15,5 @@ artifacts/benchmarks
 next-env.d.ts
 .claude
 .wrangler
+.open-next
+.dev.vars

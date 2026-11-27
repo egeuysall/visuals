@@ -6,5 +6,5 @@ import { listRuns } from "@/lib/server/db";
 export default async function AppPage() {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
-  return <Workspace key={user.id} username={user.username} initialRuns={listRuns(user.id)} />;
+  return <Workspace key={user.id} username={user.username} initialRuns={await listRuns(user.id)} />;
 }

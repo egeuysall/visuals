@@ -6,7 +6,7 @@ import { median, ratio } from "@/lib/stats";
 import type { ArmName, ArmResult, Levers, Run, StreamEvent } from "@/lib/types";
 import { runArm } from "./agent";
 import type { User } from "./auth";
-import { deleteRuns, listRuns, saveRun, takeLiveRun } from "./db";
+import { deleteRuns, listRuns, saveRun, takeToday } from "./db";
 import { memoryFor } from "./memory";
 import { DEFAULT_TASK, incidentSources } from "./scenario";
 import { modelName, pricing } from "./workers-ai";
@@ -136,8 +136,10 @@ async function run(user: User, args: string[], emit: Emit, signal: AbortSignal) 
   if (running.has(user.id)) return log("one question at a time. the last one is still running.");
   running.add(user.id);
   try {
-    if (!takeLiveRun(Number(process.env.LIVE_RUNS_PER_DAY || 50)))
-      return log("the daily limit is reached. come back tomorrow.");
+    if (!(await takeToday(`runs:${user.id}`, Number(process.env.USER_RUNS_PER_DAY || 20))))
+      return log("you've reached today's limit. come back tomorrow.");
+    if (!(await takeToday("runs", Number(process.env.LIVE_RUNS_PER_DAY || 200))))
+      return log("the site has reached today's limit. come back tomorrow.");
 
     const memory = memoryFor(user.id);
     const recalled = await readMemory(memory, task);
@@ -180,7 +182,7 @@ async function run(user: User, args: string[], emit: Emit, signal: AbortSignal) 
       memory: recalled.state,
       ...results,
     };
-    saveRun(user.id, result);
+    await saveRun(user.id, result);
     emit({ type: "run", run: result });
     const ok = result.baseline.success && result.optimized.success;
     if (!ok)
@@ -228,7 +230,7 @@ export async function execute(
     "earlier test": "bench",
   };
   let words = tokenize(alias[line.toLowerCase()] ?? line);
-  if (words[0] === "visuals") words = words.slice(1);
+  if (words[0] === "sdk") words = words.slice(1);
   const [command = "help", ...args] = words;
   const text = args.join(" ").trim();
 
@@ -246,6 +248,9 @@ export async function execute(
       if (text.length > 2_000) return log("keep it under 2000 characters.");
       const memory = memoryFor(user.id);
       if (!memory) return log(MEMORY_OFF);
+      // Memory calls cost money too, so they are capped per account and for the whole site.
+      if (!(await takeToday(`memory:${user.id}`, 50)) || !(await takeToday("memory", 1_000)))
+        return log("that's enough memory for today. come back tomorrow.");
       try {
         if (command === "remember") {
           await memory.remember(text, { wait: true });
@@ -259,7 +264,9 @@ export async function execute(
       }
     }
     case "stats": {
-      const all = listRuns(user.id).filter((r) => r.baseline.success && r.optimized.success);
+      const all = (await listRuns(user.id)).filter(
+        (r) => r.baseline.success && r.optimized.success,
+      );
       if (!all.length) return log("no results yet. press compare to start.");
       return log(
         `your typical result over ${all.length}\n${table(medians(all.map((r) => r.baseline)), medians(all.map((r) => r.optimized)))}`,
@@ -282,7 +289,7 @@ export async function execute(
       );
     }
     case "reset":
-      deleteRuns(user.id);
+      await deleteRuns(user.id);
       emit({ type: "reset" });
       return log("your results are deleted.");
     default:

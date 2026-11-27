@@ -1,5 +1,6 @@
 import "server-only";
 import type { Provider, ProviderMessage, ProviderRequest, ProviderResponse } from "@runto/core";
+import { bindings } from "./cloudflare";
 
 export const modelName = () => process.env.MODEL_NAME || "@cf/zai-org/glm-4.7-flash";
 
@@ -44,7 +45,18 @@ function toChat(messages: ProviderMessage[], names: Map<string, string>) {
   }));
 }
 
-/** A runtime provider over apps/model, the Cloudflare Workers AI worker. */
+/** Stops waiting when the run is cancelled or times out. */
+function abortable<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return work;
+  signal.throwIfAborted();
+  return new Promise((resolve, reject) => {
+    const stop = () => reject(signal.reason);
+    signal.addEventListener("abort", stop, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener("abort", stop));
+  });
+}
+
+/** A runtime provider over the Cloudflare Workers AI binding. */
 export function workersAiProvider(thinking: boolean): Provider {
   return {
     name: "cloudflare-workers-ai",
@@ -56,39 +68,26 @@ export function workersAiProvider(thinking: boolean): Provider {
       const system = request.instructions
         ? [{ role: "system", content: request.instructions }]
         : [];
-      const url = `${process.env.MODEL_URL || "http://127.0.0.1:8787"}/run`;
-      const token = process.env.MODEL_PROXY_TOKEN;
-      let res: Response;
-      try {
-        res = await fetch(url, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            ...(token ? { authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            messages: [...system, ...toChat(request.messages, names)],
-            tools: request.tools.map((t) => ({
-              type: "function",
-              function: { name: t.name, description: t.description, parameters: t.inputSchema },
-            })),
-            // Until something has been looked up, the model has to look things up. Left to choose,
-            // it can answer from nothing and invent the facts.
-            ...(request.messages.some((m) => m.role === "tool") ? {} : { tool_choice: "required" }),
-            max_tokens: request.maxOutputTokens ?? 4096,
-            thinking,
-          }),
-          signal: request.signal,
-        });
-      } catch (error) {
-        if (request.signal?.aborted) throw error;
-        throw new Error(
-          "the model worker is not reachable. start it: pnpm --filter visuals-model dev",
-        );
-      }
-      if (!res.ok)
-        throw new Error(`model call failed (${res.status}): ${(await res.text()).slice(0, 300)}`);
-      const { output } = (await res.json()) as { output: Completion };
+      const run = bindings().AI.run(modelName(), {
+        messages: [...system, ...toChat(request.messages, names)],
+        ...(request.tools.length
+          ? {
+              tools: request.tools.map((t) => ({
+                type: "function",
+                function: { name: t.name, description: t.description, parameters: t.inputSchema },
+              })),
+              parallel_tool_calls: true,
+              // Until something has been looked up, the model has to look things up. Left to
+              // choose, it can answer from nothing and invent the facts.
+              ...(request.messages.some((m) => m.role === "tool")
+                ? {}
+                : { tool_choice: "required" }),
+            }
+          : {}),
+        max_tokens: Math.min(request.maxOutputTokens ?? 4096, 4096),
+        chat_template_kwargs: { enable_thinking: thinking },
+      });
+      const output = (await abortable(run, request.signal)) as Completion;
       const choice = output.choices?.[0];
       if (!choice?.message) throw new Error("the model returned no message");
       return {
