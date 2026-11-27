@@ -21,8 +21,11 @@ visuals runs the same agent task twice, a baseline and an optimized runtime, fro
 
 - One task (an incident investigation with twelve read-only tools over made-up data, 120 ms each). Not a claim about "any model" or any workload.
 - 5x cheaper held in these samples on one model. **5x faster end to end did not**: only the tool phase gets there.
-- The optimized arm turns the model's reasoning off by default. That is a large part of the gain on `glm-4.7-flash`. Use `run --thinking` to see it without.
+- The optimized arm turns the model's reasoning off by default. That is a large part of the gain on `glm-4.7-flash`. Type `run --thinking` to see the gain without that.
 - The "key facts" figure is a keyword check, not a grade. Read the answers.
+- The table's first row was measured before lookups became required. Three runs afterwards, with different questions: 6.8x to 10.6x cheaper and 2.2x to 2.7x faster.
+- The optimized answer can be worse. In those three runs it checked 5 to 12 of 12 sources and found 3 or 4 of 4 key facts, where standard found 4 each time.
+- Both ways now run at the same time. A model must look something up before it answers. An answer with no lookups is never counted as a saving, because one such run invented its facts.
 - The arms can make different numbers of tool calls. The terminal says when they do.
 - The recorded benchmark was produced before the preview fix, and its success check only looked at the shape of the report. Today's `examples/benchmark` sets low reasoning on both arms, so do not attribute its savings to reasoning.
 - Costs are estimates from token counts and list prices, not an invoice.
@@ -38,13 +41,13 @@ cp apps/web/.env.example apps/web/.env.local   # add the kaibo values
 pnpm visuals                                   # model worker on :8787, web on :3000
 ```
 
-Sign up with a lowercase username and a 4 digit PIN, then type `run`. `help` lists the commands.
+Sign up with a lowercase username and a 4 digit PIN, then press compare or type a question. `help` lists the commands. Advanced: `run --thinking`, `--no-parallel`, `--no-compact`, `--no-schema`.
 
 ## How it works
 
 - `apps/web`: Next.js. Server code runs both arms through `@runto/core`, streams the terminal output, and records a span for every model and tool call.
 - `apps/model`: a small Worker around the Workers AI binding. Without `MODEL_PROXY_TOKEN` it only answers on localhost.
-- **Memory**: kaibo, scoped with `withUser("visuals:<account id>")`. The id comes from the signed session cookie, never from the client. Recalled memory goes into both arms. Only what you type is saved, not model output.
+- **Memory**: kaibo (set `KAIBO_PROJECT` if your key covers every project), scoped with `withUser("visuals:<account id>")`. The id comes from the signed session cookie, never from the client. Recalled memory goes into both arms. Only what you type is saved, not model output.
 - **Auth**: username and PIN, scrypt hashed. Five wrong PINs lock the account for 15 minutes. A 4 digit PIN is demo-grade: do not protect anything valuable with it.
 - **Storage**: SQLite in `apps/web/.data`. It needs a persistent disk, so this does not run on serverless hosting as is.
 - **Limits**: sign-up is open, and `LIVE_RUNS_PER_DAY` is the only cap on spend across all users.
