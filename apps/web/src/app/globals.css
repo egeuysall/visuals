@@ -1,0 +1,216 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Dark is the default; light comes from the OS, as on www, ibx and bri. */
+@custom-variant dark (@media not (prefers-color-scheme: light));
+
+/*
+ * shadcn's semantic variables, mapped onto the sibling tokens: near-black, neutral grays,
+ * hairline borders, Geist Mono only, one neutral accent (no hue). No second palette.
+ */
+:root {
+  color-scheme: dark light;
+  --background: #050505;
+  --foreground: #f5f5f5;
+  --card: #0a0a0a;
+  --card-foreground: #f5f5f5;
+  --popover: #0a0a0a;
+  --popover-foreground: #f5f5f5;
+  --primary: #f5f5f5;
+  --primary-foreground: #050505;
+  --secondary: #171717;
+  --secondary-foreground: #f5f5f5;
+  --muted: #171717;
+  --muted-foreground: #a3a3a3;
+  --accent: #171717;
+  --accent-foreground: #f5f5f5;
+  --destructive: #f87171;
+  --border: #262626;
+  --input: #262626;
+  --ring: #737373;
+  --chart-1: #f5f5f5;
+  --chart-2: #a3a3a3;
+  --chart-3: #737373;
+  --chart-4: #525252;
+  --chart-5: #404040;
+  /* The one accent: it marks the optimized arm. The baseline stays neutral. */
+  --arm-baseline: #737373;
+  --arm-optimized: #3987e5;
+  --radius: 0.25rem;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #f5f5f5;
+  --sidebar-primary: #f5f5f5;
+  --sidebar-primary-foreground: #050505;
+  --sidebar-accent: #171717;
+  --sidebar-accent-foreground: #f5f5f5;
+  --sidebar-border: #262626;
+  --sidebar-ring: #737373;
+
+  --terminal-ansi-0: #525252;
+  --terminal-ansi-1: #f87171;
+  --terminal-ansi-2: #86efac;
+  --terminal-ansi-3: #fcd34d;
+  --terminal-ansi-4: #a3a3a3;
+  --terminal-ansi-5: #d4d4d4;
+  --terminal-ansi-6: #e5e5e5;
+  --terminal-ansi-7: #f5f5f5;
+  --terminal-ansi-8: #737373;
+  --terminal-ansi-9: #fca5a5;
+  --terminal-ansi-10: #bbf7d0;
+  --terminal-ansi-11: #fde68a;
+  --terminal-ansi-12: #d4d4d4;
+  --terminal-ansi-13: #e5e5e5;
+  --terminal-ansi-14: #f5f5f5;
+  --terminal-ansi-15: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+    --card: #ffffff;
+    --card-foreground: #171717;
+    --popover: #ffffff;
+    --popover-foreground: #171717;
+    --primary: #171717;
+    --primary-foreground: #ffffff;
+    --secondary: #f5f5f5;
+    --secondary-foreground: #171717;
+    --muted: #f5f5f5;
+    --muted-foreground: #525252;
+    --accent: #f5f5f5;
+    --accent-foreground: #171717;
+    --destructive: #b91c1c;
+    --arm-baseline: #8f8f8f;
+    --arm-optimized: #2a78d6;
+    --border: #d4d4d4;
+    --input: #d4d4d4;
+    --ring: #a3a3a3;
+    --sidebar: #fafafa;
+    --sidebar-foreground: #171717;
+    --sidebar-primary: #171717;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f5f5f5;
+    --sidebar-accent-foreground: #171717;
+    --sidebar-border: #d4d4d4;
+    --sidebar-ring: #a3a3a3;
+
+    --terminal-ansi-0: #a3a3a3;
+    --terminal-ansi-1: #b91c1c;
+    --terminal-ansi-2: #15803d;
+    --terminal-ansi-3: #a16207;
+    --terminal-ansi-4: #525252;
+    --terminal-ansi-5: #404040;
+    --terminal-ansi-6: #262626;
+    --terminal-ansi-7: #171717;
+    --terminal-ansi-8: #737373;
+    --terminal-ansi-9: #dc2626;
+    --terminal-ansi-10: #16a34a;
+    --terminal-ansi-11: #ca8a04;
+    --terminal-ansi-12: #404040;
+    --terminal-ansi-13: #262626;
+    --terminal-ansi-14: #171717;
+    --terminal-ansi-15: #000000;
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-heading: var(--font-geist-mono), ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-arm-baseline: var(--arm-baseline);
+  --color-arm-optimized: var(--arm-optimized);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    background: var(--background);
+  }
+  body {
+    @apply bg-background text-foreground;
+    line-height: 1.5;
+    text-transform: lowercase;
+    -webkit-font-smoothing: antialiased;
+  }
+  code,
+  pre,
+  kbd,
+  samp,
+  input,
+  textarea {
+    text-transform: none;
+  }
+  ::selection {
+    background: var(--foreground);
+    color: var(--background);
+  }
+}
+
+/* Landing motion: one quiet rise, staggered by --delay. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  opacity: 0;
+  animation: rise 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-enter {
+    opacity: 1;
+    animation: none;
+  }
+}
+
