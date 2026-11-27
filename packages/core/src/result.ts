@@ -71,6 +71,21 @@ function project(value: unknown, options: ResultCompileOptions): unknown {
   return rows;
 }
 
+/**
+ * Keeps whole fields, in order, while they fit in the budget. Only a field that does not fit is
+ * summarized, so one huge array cannot push the small fields around it out of the preview.
+ */
+function fitFields(entries: [string, unknown][], maxBytes: number): Record<string, unknown> {
+  const kept: Record<string, unknown> = {};
+  for (const [key, item] of entries) {
+    if (bytes(JSON.stringify({ ...kept, [key]: item })) <= maxBytes) kept[key] = item;
+    else if (Array.isArray(item)) kept[key] = { type: "array", count: item.length };
+    else if (typeof item === "string") kept[key] = `${item.slice(0, 120)}…`;
+    else kept[key] = "[omitted]";
+  }
+  return kept;
+}
+
 function preview(value: unknown, depth = 0, maxBytes = 2_000): unknown {
   const compact = (candidate: unknown, fallback: unknown): unknown =>
     bytes(JSON.stringify(candidate)) <= maxBytes ? candidate : fallback;
@@ -94,14 +109,11 @@ function preview(value: unknown, depth = 0, maxBytes = 2_000): unknown {
         entries.slice(0, 10).map(([key, item]) => [key, preview(item, depth + 1, maxBytes)]),
       ),
     };
-    const scalarCandidate = {
+    return compact(candidate, {
       type: "object",
-      keys: entries.map(([key]) => key),
-      value: Object.fromEntries(
-        entries.filter(([, item]) => item === null || typeof item !== "object").slice(0, 10),
-      ),
-    };
-    return compact(candidate, compact(scalarCandidate, { type: "object", keys: candidate.keys }));
+      keys: candidate.keys,
+      value: fitFields(entries, maxBytes),
+    });
   }
   return value;
 }
