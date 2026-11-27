@@ -11,3 +11,7 @@ coverage
 runtime-events.jsonl
 .aar-cache
 artifacts/benchmarks
+.data
+next-env.d.ts
+.claude
+.wrangler
