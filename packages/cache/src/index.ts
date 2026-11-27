@@ -1,11 +1,9 @@
 import { mkdirSync } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 
-const { DatabaseSync } = createRequire(import.meta.url)(
-  "node:sqlite",
-) as typeof import("node:sqlite");
+// Not an import: bundlers (Turbopack) cannot resolve node:sqlite through createRequire.
+const { DatabaseSync } = process.getBuiltinModule("node:sqlite");
 
 export type CachePolicy =
   | { mode: "never" }
