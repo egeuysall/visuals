@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { Run } from "@/lib/types";
 import { dataDir } from "./data-dir";
+import { readSavedRun } from "./saved-run";
 
 const store = globalThis as { visualsDb?: DatabaseSync };
 
@@ -37,7 +38,7 @@ export function listRuns(userId: string): Run[] {
   const rows = db()
     .prepare("SELECT json FROM runs WHERE user_id = ? ORDER BY created_at DESC LIMIT 30")
     .all(userId) as { json: string }[];
-  return rows.map((r) => JSON.parse(r.json) as Run).reverse();
+  return rows.flatMap((r) => readSavedRun(r.json) ?? []).reverse();
 }
 
 export function deleteRuns(userId: string): void {

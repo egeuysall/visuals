@@ -37,7 +37,8 @@ test("sessions cannot be forged and runs stay with their user", async () => {
   const a = user(auth.createUser("alice", "1111"));
   const b = user(auth.createUser("bob", "2222"));
   expect(auth.createUser("alice", "3333")).toHaveProperty("error");
-  store.saveRun(a.id, { id: "r1", createdAt: 1 } as never);
+  const saved = { id: "r1", createdAt: 1, pricing: {}, baseline: {}, optimized: {} };
+  store.saveRun(a.id, saved as never);
   expect(store.listRuns(b.id)).toEqual([]);
   store.deleteRuns(b.id);
   expect(store.listRuns(a.id)).toHaveLength(1);
@@ -63,4 +64,15 @@ test("the daily live cap holds", () => {
     true,
     false,
   ]);
+});
+
+test("results saved by earlier versions load without crashing", () => {
+  const d = user(auth.createUser("dana", "4444"));
+  const arm = { output: "legacy carts: disable the flag" };
+  const old = { id: "old", createdAt: 1, pricing: {}, baseline: arm, optimized: arm };
+  store.saveRun(d.id, old as never);
+  store.saveRun(d.id, { id: "simulated", createdAt: 2, baseline: arm, optimized: arm } as never);
+  const runs = store.listRuns(d.id);
+  expect(runs.map((r) => r.id)).toEqual(["old"]);
+  expect(runs[0]?.optimized.facts).toEqual({ found: 2, total: 4 });
 });
