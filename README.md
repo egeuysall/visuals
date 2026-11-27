@@ -25,7 +25,7 @@ visuals runs the same agent task twice, a baseline and an optimized runtime, fro
 - The "key facts" figure is a keyword check, not a grade. Read the answers.
 - The table's first row was measured before lookups became required. Three runs afterwards, with different questions: 6.8x to 10.6x cheaper and 2.2x to 2.7x faster.
 - The optimized answer can be worse. In those three runs it checked 5 to 12 of 12 sources and found 3 or 4 of 4 key facts, where standard found 4 each time.
-- Both ways now run at the same time. A model must look something up before it answers. An answer with no lookups is never counted as a saving, because one such run invented its facts.
+- The optimized way runs first and its answer shows straight away. The standard way runs after it, often for 20 to 60 seconds. A model must look something up before it answers. An answer with no lookups is never counted as a saving, because one such run invented its facts.
 - The arms can make different numbers of tool calls. The terminal says when they do.
 - The recorded benchmark was produced before the preview fix, and its success check only looked at the shape of the report. Today's `examples/benchmark` sets low reasoning on both arms, so do not attribute its savings to reasoning.
 - Costs are estimates from token counts and list prices, not an invoice.

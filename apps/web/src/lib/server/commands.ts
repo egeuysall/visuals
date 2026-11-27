@@ -90,13 +90,13 @@ function medians(arms: ArmResult[]): ArmResult {
 const logError = (what: string, error: unknown) =>
   console.error(what, error instanceof Error ? error.message : error);
 
-/** Models like to answer in markdown, which a plain text screen shows as stray symbols. */
-const plain = (text: string) =>
+/** Swaps typographic arrows and long dashes in an answer for ordinary words and commas. */
+const tidy = (text: string) =>
   text
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/\*\*|__|`|\\(?=_)/g, "")
+    .replace(/\\(?=_)/g, "")
     .replace(/\s*\u2192\s*/g, " to ")
-    .replace(/\s*\u2014\s*/g, ", ");
+    .replace(/\s*\u2014\s*/g, ", ")
+    .trim();
 
 async function readMemory(
   memory: Kaibo | null,
@@ -142,11 +142,12 @@ async function run(user: User, args: string[], emit: Emit, signal: AbortSignal) 
     const memory = memoryFor(user.id);
     const recalled = await readMemory(memory, task);
     if (recalled.note) log(recalled.note);
-    log("answering both ways at once. this usually takes under a minute.");
 
     const input = recalled.text ? `${task}\n\n${recalled.text}` : task;
 
-    // Side by side, so the wait is only as long as the slower one. Each is timed on its own.
+    // One at a time, so neither slows the other down. The optimized way goes first and its answer
+    // is shown straight away: nobody has to sit through the slow one to read it.
+    log("getting your answer.");
     const answer = async (arm: ArmName, label: string) => {
       const r = await runArm(
         arm,
@@ -162,10 +163,11 @@ async function run(user: User, args: string[], emit: Emit, signal: AbortSignal) 
       else log(`${label} way: gave no answer.`);
       return r;
     };
-    const [baseline, optimized] = await Promise.all([
-      answer("baseline", "standard"),
-      answer("optimized", "optimized"),
-    ]);
+    const optimized = await answer("optimized", "optimized");
+    if (optimized.success) emit({ type: "answer", text: tidy(optimized.output) });
+    signal.throwIfAborted();
+    log("now timing the standard way to compare. it often takes 20 to 60 seconds.");
+    const baseline = await answer("baseline", "standard");
     const results = { baseline, optimized };
 
     const result: Run = {
@@ -196,8 +198,9 @@ async function run(user: User, args: string[], emit: Emit, signal: AbortSignal) 
           `heads up: standard checked ${baseline.toolCalls} sources and optimized checked ${optimized.toolCalls}, so this is not an exact match.`,
         );
     }
-    const shown = result.optimized.success ? result.optimized : result.baseline;
-    if (shown.success) log(`\nanswer\n${plain(shown.output)}`);
+    // Already shown above unless only the standard way produced an answer.
+    if (!result.optimized.success && result.baseline.success)
+      emit({ type: "answer", text: tidy(result.baseline.output) });
 
     // Only what the user asked is stored: model output is not treated as a fact.
     if (memory && words.length) {

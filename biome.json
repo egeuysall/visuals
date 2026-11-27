@@ -25,7 +25,7 @@
       "!**/node_modules",
       "!artifacts/benchmarks",
       "!apps/web/src/components/ui",
-      "!apps/web/src/components/cli-ansi-output.tsx",
+
       "!apps/web/src/app/globals.css",
       "!apps/web/src/data",
       "!apps/web/next-env.d.ts",

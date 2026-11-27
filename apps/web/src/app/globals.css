@@ -37,6 +37,9 @@
   /* The one accent: it marks the optimized arm. The baseline stays neutral. */
   --arm-baseline: #737373;
   --arm-optimized: #3987e5;
+  /* Vesper accents, as on ibx. Used to color markdown in the answers. */
+  --vesper-orange: #ffc799;
+  --vesper-mint: #99ffe4;
   --radius: 0.25rem;
   --sidebar: #0a0a0a;
   --sidebar-foreground: #f5f5f5;
@@ -84,6 +87,8 @@
     --destructive: #b91c1c;
     --arm-baseline: #8f8f8f;
     --arm-optimized: #2a78d6;
+    --vesper-orange: #a04e1c;
+    --vesper-mint: #147a65;
     --border: #d4d4d4;
     --input: #d4d4d4;
     --ring: #a3a3a3;
@@ -139,6 +144,8 @@
   --color-ring: var(--ring);
   --color-arm-baseline: var(--arm-baseline);
   --color-arm-optimized: var(--arm-optimized);
+  --color-vesper-orange: var(--vesper-orange);
+  --color-vesper-mint: var(--vesper-mint);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);

@@ -168,4 +168,5 @@ Before answering, request every read-only source, all together in the same turn.
 Call each with {"issueId":"ENG-142"}. The reads are independent.
 Answer the request concisely, using only facts the sources returned. Never invent a fact or a number.
 If the sources do not answer the request, say so.
-Write plain text in short paragraphs, with no markdown.`;
+Format the answer as short markdown: ## headings, bullet lists, and \`backticks\` around file, flag
+and error names.`;

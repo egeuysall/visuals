@@ -48,5 +48,7 @@ export interface Run {
 
 export type StreamEvent =
   | { type: "log"; text: string }
+  /** A model answer, in markdown. */
+  | { type: "answer"; text: string }
   | { type: "run"; run: Run }
   | { type: "reset" };

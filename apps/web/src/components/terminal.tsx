@@ -1,7 +1,7 @@
 "use client";
 
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { CliAnsiOutput } from "@/components/cli-ansi-output";
+import { MarkdownColors } from "@/components/markdown-colors";
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
@@ -12,7 +12,8 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { Run, StreamEvent } from "@/lib/types";
 
-type Entry = { command: string; output: string };
+type Block = { markdown: boolean; text: string };
+type Entry = { command: string; blocks: Block[] };
 
 /** Buttons say what happens; the command behind each one stays out of the way. */
 const SUGGESTIONS = [
@@ -56,14 +57,17 @@ export function Terminal({
     };
   }, [busy]);
 
-  const print = (text: string) =>
+  /** Adds to the latest entry. Plain lines join up; an answer is a block of its own. */
+  const print = (text: string, markdown = false) =>
     setEntries((all) => {
-      const last = all.at(-1);
-      if (!last) return all;
-      return [
-        ...all.slice(0, -1),
-        { ...last, output: last.output ? `${last.output}\n${text}` : text },
-      ];
+      const entry = all.at(-1);
+      if (!entry) return all;
+      const last = entry.blocks.at(-1);
+      const blocks =
+        last && !last.markdown && !markdown
+          ? [...entry.blocks.slice(0, -1), { markdown, text: `${last.text}\n${text}` }]
+          : [...entry.blocks, { markdown, text }];
+      return [...all.slice(0, -1), { ...entry, blocks }];
     });
 
   async function run(raw: string, label?: string) {
@@ -73,7 +77,7 @@ export function Terminal({
     cursor.current = -1;
     setHistory((h) => [...h.filter((x) => x !== line), line].slice(-100));
     if (line === "clear") return setEntries([]);
-    setEntries((all) => [...all.slice(-19), { command: label ?? line, output: "" }]);
+    setEntries((all) => [...all.slice(-19), { command: label ?? line, blocks: [] }]);
     setBusy(true);
     abort.current = new AbortController();
     try {
@@ -95,6 +99,7 @@ export function Terminal({
         for (const l of lines) {
           const event = JSON.parse(l) as StreamEvent;
           if (event.type === "log") print(event.text);
+          else if (event.type === "answer") print(event.text, true);
           else if (event.type === "run") onRun(event.run);
           else onReset();
         }
@@ -151,8 +156,19 @@ export function Terminal({
                 </span>
                 {e.command}
               </p>
-              <div className="normal-case">
-                <CliAnsiOutput output={e.output} />
+              <div className="space-y-3 normal-case">
+                {e.blocks.map((block, j) =>
+                  block.markdown ? (
+                    <MarkdownColors key={j} text={block.text} />
+                  ) : (
+                    <pre
+                      key={j}
+                      className="font-mono text-xs leading-5 break-words whitespace-pre-wrap"
+                    >
+                      {block.text.trim()}
+                    </pre>
+                  ),
+                )}
               </div>
             </div>
           ))}
