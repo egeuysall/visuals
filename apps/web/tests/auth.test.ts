@@ -75,4 +75,14 @@ test("results saved by earlier versions load without crashing", () => {
   const runs = store.listRuns(d.id);
   expect(runs.map((r) => r.id)).toEqual(["old"]);
   expect(runs[0]?.optimized.facts).toEqual({ found: 2, total: 4 });
+
+  const invented = { output: "made up", success: true, toolCalls: 0 };
+  store.saveRun(d.id, {
+    id: "ungrounded",
+    createdAt: 3,
+    pricing: {},
+    baseline: arm,
+    optimized: invented,
+  } as never);
+  expect(store.listRuns(d.id).at(-1)?.optimized.success).toBe(false);
 });

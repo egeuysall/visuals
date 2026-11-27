@@ -9,6 +9,10 @@ import { factCheck } from "./scenario";
 export function readSavedRun(json: string): Run | null {
   const run = JSON.parse(json) as Run;
   if (!run.pricing || !run.baseline || !run.optimized) return null;
-  for (const arm of [run.baseline, run.optimized]) arm.facts ??= factCheck(arm.output ?? "");
+  for (const arm of [run.baseline, run.optimized]) {
+    arm.facts ??= factCheck(arm.output ?? "");
+    // Saved before lookups were required: an answer with none has no basis, so it never counts.
+    if (arm.toolCalls === 0) arm.success = false;
+  }
   return run;
 }
